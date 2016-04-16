@@ -86,10 +86,8 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         super.viewDidLoad()
         
         device = MTLCreateSystemDefaultDevice()
-        guard device != nil else { // Fallback to a blank NSView, an application could also fallback to OpenGL here.
-            print("Metal is not supported on this device")
-            self.view = NSView(frame: self.view.frame)
-            return
+        guard device != nil else {
+            fatalError()
         }
 
         // setup view properties

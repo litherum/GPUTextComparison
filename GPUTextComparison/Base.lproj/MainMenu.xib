@@ -672,13 +672,17 @@
             <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
             <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
             <rect key="contentRect" x="335" y="390" width="800" height="600"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1280" height="777"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1280" height="800"/>
             <view key="contentView" wantsLayer="YES" id="EiT-Mj-1SZ">
                 <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
                 <autoresizingMask key="autoresizingMask"/>
                 <subviews>
                     <customView translatesAutoresizingMaskIntoConstraints="NO" id="q5D-xK-hCD" customClass="MTKView">
                         <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
+                        <constraints>
+                            <constraint firstAttribute="width" constant="800" id="nCN-z1-gbA"/>
+                            <constraint firstAttribute="height" constant="600" id="oO4-5h-8b0"/>
+                        </constraints>
                     </customView>
                 </subviews>
                 <constraints>
