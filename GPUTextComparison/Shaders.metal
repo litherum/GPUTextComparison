@@ -20,12 +20,12 @@ struct VertexInOut
 };
 
 vertex VertexInOut passThroughVertex(uint vid [[ vertex_id ]],
-                                     constant float3* position [[ buffer(0) ]],
+                                     constant float2* position [[ buffer(0) ]],
                                      constant float2* textureCoordinate [[ buffer(1) ]])
 {
     VertexInOut outVertex;
     
-    outVertex.position = float4(position[vid], 1);
+    outVertex.position = float4x4(float4(2.0 / 800.0, 0, 0, 0), float4(0, 2.0 / 600.0, 0, 0), float4(0, 0, 1, 0), float4(-1, -1, 0, 1)) * float4(position[vid], 0, 1);
     outVertex.textureCoordinate = textureCoordinate[vid];
     
     return outVertex;

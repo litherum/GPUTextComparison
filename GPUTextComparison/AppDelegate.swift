@@ -13,8 +13,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBOutlet weak var window: NSWindow!
 
+    @IBOutlet var displayViewController: DisplayViewController!
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
+        displayViewController.frames = layout()
         // Insert code here to initialize your application
     }
 

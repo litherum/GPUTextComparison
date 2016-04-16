@@ -10,7 +10,6 @@
 		C2A579FB1CBB42DB00BC11A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A579FA1CBB42DB00BC11A1 /* AppDelegate.swift */; };
 		C2A579FD1CBB42DB00BC11A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C2A579FC1CBB42DB00BC11A1 /* Assets.xcassets */; };
 		C2A57A001CBB42DB00BC11A1 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = C2A579FE1CBB42DB00BC11A1 /* MainMenu.xib */; };
-		C2A57A081CBB55F300BC11A1 /* TestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A071CBB55F300BC11A1 /* TestView.swift */; };
 		C2A57A0E1CBB69AE00BC11A1 /* shakespeare.txt in Resources */ = {isa = PBXBuildFile; fileRef = C2A57A0D1CBB69AE00BC11A1 /* shakespeare.txt */; };
 		C2A57A161CBB6B9000BC11A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A151CBB6B9000BC11A1 /* AppDelegate.swift */; };
 		C2A57A181CBB6B9000BC11A1 /* GameViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A171CBB6B9000BC11A1 /* GameViewController.swift */; };
@@ -19,6 +18,7 @@
 		C2A57A1F1CBB6B9100BC11A1 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = C2A57A1D1CBB6B9100BC11A1 /* MainMenu.xib */; };
 		C2A57A271CBB817100BC11A1 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A261CBB817100BC11A1 /* Shaders.metal */; };
 		C2A57A291CC2C8AA00BC11A1 /* DisplayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */; };
+		C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A2A1CC2E60500BC11A1 /* Layout.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -27,7 +27,6 @@
 		C2A579FC1CBB42DB00BC11A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		C2A579FF1CBB42DB00BC11A1 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.xib; name = Base; path = Base.lproj/MainMenu.xib; sourceTree = "<group>"; };
 		C2A57A011CBB42DB00BC11A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		C2A57A071CBB55F300BC11A1 /* TestView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TestView.swift; sourceTree = "<group>"; };
 		C2A57A0D1CBB69AE00BC11A1 /* shakespeare.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = shakespeare.txt; sourceTree = "<group>"; };
 		C2A57A131CBB6B9000BC11A1 /* Game.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Game.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C2A57A151CBB6B9000BC11A1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
@@ -38,6 +37,7 @@
 		C2A57A201CBB6B9100BC11A1 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayViewController.swift; sourceTree = "<group>"; };
 		C2A57A261CBB817100BC11A1 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
+		C2A57A2A1CC2E60500BC11A1 /* Layout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -84,9 +84,9 @@
 				C2A579FC1CBB42DB00BC11A1 /* Assets.xcassets */,
 				C2A579FE1CBB42DB00BC11A1 /* MainMenu.xib */,
 				C2A57A011CBB42DB00BC11A1 /* Info.plist */,
-				C2A57A071CBB55F300BC11A1 /* TestView.swift */,
 				C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */,
 				C2A57A261CBB817100BC11A1 /* Shaders.metal */,
+				C2A57A2A1CC2E60500BC11A1 /* Layout.swift */,
 			);
 			path = GPUTextComparison;
 			sourceTree = "<group>";
@@ -207,7 +207,7 @@
 			files = (
 				C2A57A291CC2C8AA00BC11A1 /* DisplayViewController.swift in Sources */,
 				C2A57A271CBB817100BC11A1 /* Shaders.metal in Sources */,
-				C2A57A081CBB55F300BC11A1 /* TestView.swift in Sources */,
+				C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */,
 				C2A579FB1CBB42DB00BC11A1 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -10,7 +10,8 @@ import Cocoa
 import MetalKit
 
 let MaxBuffers = 3
-let ConstantBufferSize = 1024*1024
+let VertexBufferSize = 1024*1024
+let TextureCoordinateBufferSize = 1024*1024
 
 let vertexData:[Float] =
 [
@@ -34,30 +35,51 @@ let textureCoordinateData:[Float] =
     0.0, 0.0
 ]
 
+struct GlyphIdentity {
+    let glyphID: CGGlyph
+    let font: CTFont
+}
+
+extension GlyphIdentity: Hashable {
+    var hashValue: Int {
+        return glyphID.hashValue ^ Int(CFHash(font))
+    }
+}
+
+func ==(lhs: GlyphIdentity, rhs: GlyphIdentity) -> Bool {
+    return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
+}
+
+struct Glyph {
+    let identity : GlyphIdentity
+    let position : CGPoint
+}
+
+typealias Frame = [Glyph]
+
 class DisplayViewController: NSViewController, MTKViewDelegate {
     
     var device: MTLDevice! = nil
     
     var commandQueue: MTLCommandQueue! = nil
     var pipelineState: MTLRenderPipelineState! = nil
-    var vertexBuffer: MTLBuffer! = nil
-    var textureCoordinateBuffer: MTLBuffer! = nil
+    var vertexBuffers: [MTLBuffer] = []
+    var textureCoordinateBuffers: [MTLBuffer] = []
     var texture: MTLTexture! = nil
 
     let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
     var bufferIndex = 0
 
-    var cache = NSCache()
+    var frameCounter = 0
 
-    struct Glyph {
-        var glyphID : CGGlyph
-        var position : CGPoint
-        var font : CTFont
+    struct GlyphOccupation {
+        var texture: MTLTexture
+        var space: CGRect
     }
 
-    typealias Frame = [Glyph]
-
     var frames : [Frame] = []
+
+    var glyphUtilizations: [GlyphIdentity : GlyphOccupation] = [:]
 
     override func viewDidLoad() {
         
@@ -99,93 +121,169 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         do {
             try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
         } catch let error {
-            print("Failed to create pipeline state, error \(error)")
+            fatalError("Failed to create pipeline state, error \(error)")
         }
-        
-        // generate a large enough buffer to allow streaming vertices for 3 semaphore controlled frames
-        vertexBuffer = device.newBufferWithLength(ConstantBufferSize, options: [])
-        vertexBuffer.label = "vertices"
-        
-        let textureCoordinateSize = textureCoordinateData.count * sizeofValue(textureCoordinateData[0])
-        textureCoordinateBuffer = device.newBufferWithBytes(textureCoordinateData, length: textureCoordinateSize, options: [])
-        textureCoordinateBuffer.label = "texture coordinates"
 
         let textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(.RGBA8Unorm, width: 800, height: 600, mipmapped: false)
         texture = device.newTextureWithDescriptor(textureDescriptor)
         let newData = Array<UInt8>(count: 800 * 600 * 4, repeatedValue: UInt8(255))
         texture.replaceRegion(MTLRegionMake2D(0, 0, 800, 600), mipmapLevel: 0, withBytes: newData, bytesPerRow: 800 * 4)
     }
-    
-    func update() {
-        
-        // vData is pointer to the MTLBuffer's Float data contents
-        let pData = vertexBuffer.contents()
-        let vData = UnsafeMutablePointer<Float>(pData + 256*bufferIndex)
-        
-        // reset the vertices to default before adding animated offsets
-        vData.initializeFrom(vertexData)
+
+    /*func runBenchmark(frames: [Frame]) {
+        for frame in frames {
+            for glyph in frame {
+                var occupation = glyphUtilizations[glyph.identity]
+                while occupation == nil {
+                }
+                guard let usedOccupation = occupation else {
+                    fatalError()
+                }
+                
+            }
+        }
+    }*/
+
+    func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+        if vertexBuffers.isEmpty {
+            let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
+            usedBuffers.append(newBuffer)
+            return newBuffer
+        } else {
+            let buffer = vertexBuffers.removeLast()
+            usedBuffers.append(buffer)
+            return buffer
+        }
     }
 
-    func layout() -> [Frame] {
-        let path = NSBundle.mainBundle().pathForResource("shakespeare", ofType: "txt")!
-        var encoding = UInt(0)
-        var string = ""
-        do {
-            string = try NSString(contentsOfFile: path, usedEncoding: &encoding) as String
-        } catch {
-            fatalError()
+    func acquireTextureCoordinateBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+        if textureCoordinateBuffers.isEmpty {
+            let newBuffer = device.newBufferWithLength(TextureCoordinateBufferSize, options: [])
+            usedBuffers.append(newBuffer)
+            return newBuffer
+        } else {
+            let buffer = textureCoordinateBuffers.removeLast()
+            usedBuffers.append(buffer)
+            return buffer
         }
+    }
 
-        /*var endIndex = string.startIndex
-        for _ in 0 ..< 2000 {
-            endIndex = endIndex.successor()
+    func canAppendQuad(vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, textureCoordinateBufferUtilization: Int) -> Bool {
+        if vertexBufferUtilization + sizeof(Float) * 2 * 3 * 2 > vertexBuffer.length {
+            return false
         }
-        string = string.substringToIndex(endIndex)*/
-        let font = CTFontCreateWithName("American Typewriter", 6, nil)
-        let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string, [kCTFontAttributeName as String : font])
-        let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
-        var frameStart = CFIndex(0)
-        var result : [Frame] = []
-        while true {
-            let frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(frameStart, 0), CGPathCreateWithRect(CGRectMake(0, 0, 800, 600), nil), nil)
-            let visibleRange = CTFrameGetVisibleStringRange(frame)
-            if visibleRange.length == 0 {
-                break
-            }
-            let lines = CTFrameGetLines(frame) as NSArray
-            var lineOrigins = Array<CGPoint>(count: lines.count, repeatedValue: CGPointZero)
-            CTFrameGetLineOrigins(frame, CFRangeMake(0, lines.count), &lineOrigins)
-
-            var resultFrame = Frame()
-
-            for i in 0 ..< lines.count {
-                let line = lines[i] as! CTLine
-                let lineOrigin = lineOrigins[i]
-
-                let runs = CTLineGetGlyphRuns(line) as NSArray
-                for run in runs {
-                    let run = run as! CTRun
-                    let glyphCount = CTRunGetGlyphCount(run)
-                    var glyphs = Array<CGGlyph>(count: glyphCount, repeatedValue: CGGlyph(0))
-                    CTRunGetGlyphs(run, CFRangeMake(0, glyphCount), &glyphs)
-                    var positions = Array<CGPoint>(count: glyphCount, repeatedValue: CGPointZero)
-                    CTRunGetPositions(run, CFRangeMake(0, glyphCount), &positions)
-                    let attributes = CTRunGetAttributes(run) as NSDictionary
-                    let usedFont = attributes[kCTFontAttributeName as String] as! CTFont
-                    for j in 0 ..< glyphCount {
-                        resultFrame.append(Glyph(glyphID: glyphs[j], position: CGPointMake(positions[j].x + lineOrigin.x, positions[j].y + lineOrigin.y), font: usedFont))
-                    }
-                }
-            }
-            result.append(resultFrame)
-            frameStart = visibleRange.location + visibleRange.length
+        if textureCoordinateBufferUtilization + sizeof(Float) * 2 * 3 * 2 > textureCoordinateBuffer.length {
+            return false
         }
-        return result
+        return true
+    }
+
+    func appendQuad(position: CGPoint, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int) {
+        assert(canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
+        
+        let pVertexData = vertexBuffer.contents()
+        let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+        let x = Float(position.x)
+        let y = Float(position.y)
+        let newVertices: [Float] =
+        [
+            x    , y    ,
+            x    , y + 3,
+            x + 3, y + 3,
+
+            x + 3, y + 3,
+            x + 3, y    ,
+            x    , y    ,
+        ]
+        
+        vVertexData.initializeFrom(newVertices)
+        vertexBufferUtilization = vertexBufferUtilization + sizeofValue(newVertices[0]) * 2 * 3 * 2
+        
+        let pTextureCoordinateData = textureCoordinateBuffer.contents()
+        let vTextureCoordinateData = UnsafeMutablePointer<Float>(pTextureCoordinateData + textureCoordinateBufferUtilization)
+        let newTextureCoordinates: [Float] =
+        [
+            0.0, 0.0,
+            0.0, 1.0,
+            1.0, 1.0,
+
+            1.0, 1.0,
+            1.0, 0.0,
+            0.0, 0.0
+        ]
+        
+        vTextureCoordinateData.initializeFrom(newTextureCoordinates)
+        textureCoordinateBufferUtilization = textureCoordinateBufferUtilization + sizeofValue(newTextureCoordinates[0]) * 2 * 3 * 2
+    }
+
+    func issueDraw(renderEncoder: MTLRenderCommandEncoder, vertexBuffer: MTLBuffer, textureCoordinateBuffer: MTLBuffer, vertexCount: Int) {
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
+        renderEncoder.setVertexBuffer(textureCoordinateBuffer, offset:0, atIndex: 1)
+        renderEncoder.setFragmentTexture(texture, atIndex: 0)
+        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
     }
     
     func drawInMTKView(view: MTKView) {
+        if frameCounter >= frames.count {
+            frameCounter = 0
+            if frames.count == 0 {
+                return
+            }
+        }
+        let frame = frames[frameCounter]
+
+        var usedVertexBuffers: [MTLBuffer] = []
+        var usedTextureCoordinateBuffers: [MTLBuffer] = []
+
+        let commandBuffer = commandQueue.commandBuffer()
+
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
+            return
+        }
+        let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
+        renderEncoder.setRenderPipelineState(pipelineState)
+
+        var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        var vertexBufferUtilization = 0
+        var textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
+        var textureCoordinateBufferUtilization = 0
+
+        for glyph in frame {
+            if !canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization) {
+                issueDraw(renderEncoder, vertexBuffer: vertexBuffer, textureCoordinateBuffer: textureCoordinateBuffer, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+                vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+                vertexBufferUtilization = 0
+                textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
+                textureCoordinateBufferUtilization = 0
+            }
+            appendQuad(glyph.position, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization)
+        }
+        issueDraw(renderEncoder, vertexBuffer: vertexBuffer, textureCoordinateBuffer: textureCoordinateBuffer, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+
+        renderEncoder.endEncoding()
+        commandBuffer.presentDrawable(currentDrawable)
+
+        commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
+            if let strongSelf = self {
+                dispatch_async(dispatch_get_main_queue(), {
+                    strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
+                    strongSelf.textureCoordinateBuffers.appendContentsOf(usedTextureCoordinateBuffers)
+                })
+            }
+            return
+        }
+
+        commandBuffer.commit()
+
+        frameCounter = frameCounter + 1
+
+
+
+
+
+
         
-        // use semaphore to encode 3 frames ahead
+        /*// use semaphore to encode 3 frames ahead
         dispatch_semaphore_wait(inflightSemaphore, DISPATCH_TIME_FOREVER)
         
         self.update()
@@ -224,6 +322,8 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         bufferIndex = (bufferIndex + 1) % MaxBuffers
         
         commandBuffer.commit()
+
+        frameCounter = frameCounter + 1*/
     }
     
     

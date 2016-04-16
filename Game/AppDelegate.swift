@@ -13,6 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     
     @IBOutlet weak var window: NSWindow!
     
+    @IBOutlet var displayViewController: DisplayViewController!
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         
     }
