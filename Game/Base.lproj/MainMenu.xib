@@ -12,7 +12,22 @@
         </customObject>
         <customObject id="-1" userLabel="First Responder" customClass="FirstResponder"/>
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
-        <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="GPUTextComparison" customModuleProvider="target">
+        <window title="Metal Mac Template" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="QvC-M9-y7g">
+            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
+            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
+            <rect key="contentRect" x="335" y="390" width="480" height="360"/>
+            <rect key="screenRect" x="0.0" y="0.0" width="1280" height="777"/>
+            <view key="contentView" id="EiT-Mj-1SZ" customClass="MTKView">
+                <rect key="frame" x="0.0" y="0.0" width="480" height="360"/>
+                <autoresizingMask key="autoresizingMask"/>
+            </view>
+        </window>
+        <viewController id="hW3-AJ-wXb" customClass="GameViewController" customModule="Game" customModuleProvider="target">
+            <connections>
+                <outlet property="view" destination="EiT-Mj-1SZ" id="csQ-UI-Tdb"/>
+            </connections>
+        </viewController>
+        <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="Game" customModuleProvider="target">
             <connections>
                 <outlet property="window" destination="QvC-M9-y7g" id="gIp-Ho-8D9"/>
             </connections>
@@ -20,11 +35,11 @@
         <customObject id="YLy-65-1bz" customClass="NSFontManager"/>
         <menu title="Main Menu" systemMenu="main" id="AYu-sK-qS6">
             <items>
-                <menuItem title="GPUTextComparison" id="1Xt-HY-uBw">
+                <menuItem title="Metal Mac Template" id="1Xt-HY-uBw">
                     <modifierMask key="keyEquivalentModifierMask"/>
-                    <menu key="submenu" title="GPUTextComparison" systemMenu="apple" id="uQy-DD-JDr">
+                    <menu key="submenu" title="Metal Mac Template" systemMenu="apple" id="uQy-DD-JDr">
                         <items>
-                            <menuItem title="About GPUTextComparison" id="5kV-Vb-QxS">
+                            <menuItem title="About Metal Mac Template" id="5kV-Vb-QxS">
                                 <modifierMask key="keyEquivalentModifierMask"/>
                                 <connections>
                                     <action selector="orderFrontStandardAboutPanel:" target="-1" id="Exp-CZ-Vem"/>
@@ -38,7 +53,7 @@
                                 <menu key="submenu" title="Services" systemMenu="services" id="hz9-B4-Xy5"/>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="4je-JR-u6R"/>
-                            <menuItem title="Hide GPUTextComparison" keyEquivalent="h" id="Olw-nP-bQN">
+                            <menuItem title="Hide Metal Mac Template" keyEquivalent="h" id="Olw-nP-bQN">
                                 <connections>
                                     <action selector="hide:" target="-1" id="PnN-Uc-m68"/>
                                 </connections>
@@ -56,7 +71,7 @@
                                 </connections>
                             </menuItem>
                             <menuItem isSeparatorItem="YES" id="kCx-OE-vgT"/>
-                            <menuItem title="Quit GPUTextComparison" keyEquivalent="q" id="4sb-4s-VLi">
+                            <menuItem title="Quit Metal Mac Template" keyEquivalent="q" id="4sb-4s-VLi">
                                 <connections>
                                     <action selector="terminate:" target="-1" id="Te7-pn-YzF"/>
                                 </connections>
@@ -657,7 +672,7 @@
                     <modifierMask key="keyEquivalentModifierMask"/>
                     <menu key="submenu" title="Help" systemMenu="help" id="F2S-fz-NVQ">
                         <items>
-                            <menuItem title="GPUTextComparison Help" keyEquivalent="?" id="FKE-Sm-Kum">
+                            <menuItem title="Metal Mac Template Help" keyEquivalent="?" id="FKE-Sm-Kum">
                                 <connections>
                                     <action selector="showHelp:" target="-1" id="y7X-2Q-9no"/>
                                 </connections>
@@ -667,31 +682,5 @@
                 </menuItem>
             </items>
         </menu>
-        <window title="GPUTextComparison" allowsToolTipsWhenApplicationIsInactive="NO" autorecalculatesKeyViewLoop="NO" releasedWhenClosed="NO" animationBehavior="default" id="QvC-M9-y7g">
-            <windowStyleMask key="styleMask" titled="YES" closable="YES" miniaturizable="YES" resizable="YES"/>
-            <windowPositionMask key="initialPositionMask" leftStrut="YES" rightStrut="YES" topStrut="YES" bottomStrut="YES"/>
-            <rect key="contentRect" x="335" y="390" width="800" height="600"/>
-            <rect key="screenRect" x="0.0" y="0.0" width="1280" height="777"/>
-            <view key="contentView" wantsLayer="YES" id="EiT-Mj-1SZ">
-                <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
-                <autoresizingMask key="autoresizingMask"/>
-                <subviews>
-                    <customView translatesAutoresizingMaskIntoConstraints="NO" id="q5D-xK-hCD" customClass="MTKView">
-                        <rect key="frame" x="0.0" y="0.0" width="800" height="600"/>
-                    </customView>
-                </subviews>
-                <constraints>
-                    <constraint firstItem="q5D-xK-hCD" firstAttribute="leading" secondItem="EiT-Mj-1SZ" secondAttribute="leading" id="3fA-rz-lkZ"/>
-                    <constraint firstItem="q5D-xK-hCD" firstAttribute="top" secondItem="EiT-Mj-1SZ" secondAttribute="top" id="aX5-47-TUE"/>
-                    <constraint firstAttribute="bottom" secondItem="q5D-xK-hCD" secondAttribute="bottom" id="ush-Yy-8cz"/>
-                    <constraint firstAttribute="trailing" secondItem="q5D-xK-hCD" secondAttribute="trailing" id="xpP-Vn-tyK"/>
-                </constraints>
-            </view>
-        </window>
-        <viewController id="dEK-nW-5NR" customClass="DisplayViewController" customModule="GPUTextComparison" customModuleProvider="target">
-            <connections>
-                <outlet property="view" destination="q5D-xK-hCD" id="4WZ-VO-CI1"/>
-            </connections>
-        </viewController>
     </objects>
 </document>
