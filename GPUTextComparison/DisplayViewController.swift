@@ -264,66 +264,17 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         commandBuffer.presentDrawable(currentDrawable)
 
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
-            if let strongSelf = self {
-                dispatch_async(dispatch_get_main_queue(), {
+            dispatch_async(dispatch_get_main_queue(), { [weak self] in
+                if let strongSelf = self {
                     strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
                     strongSelf.textureCoordinateBuffers.appendContentsOf(usedTextureCoordinateBuffers)
-                })
-            }
-            return
+                }
+            })
         }
 
         commandBuffer.commit()
 
         frameCounter = frameCounter + 1
-
-
-
-
-
-
-        
-        /*// use semaphore to encode 3 frames ahead
-        dispatch_semaphore_wait(inflightSemaphore, DISPATCH_TIME_FOREVER)
-        
-        self.update()
-        
-        let commandBuffer = commandQueue.commandBuffer()
-        commandBuffer.label = "Frame command buffer"
-        
-        // use completion handler to signal the semaphore when this frame is completed allowing the encoding of the next frame to proceed
-        // use capture list to avoid any retain cycles if the command buffer gets retained anywhere besides this stack frame
-        commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
-            if let strongSelf = self {
-                dispatch_semaphore_signal(strongSelf.inflightSemaphore)
-            }
-            return
-        }
-        
-        if let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable
-        {
-            let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
-            renderEncoder.label = "render encoder"
-            
-            renderEncoder.pushDebugGroup("draw morphing triangle")
-            renderEncoder.setRenderPipelineState(pipelineState)
-            renderEncoder.setVertexBuffer(vertexBuffer, offset: 256*bufferIndex, atIndex: 0)
-            renderEncoder.setVertexBuffer(textureCoordinateBuffer, offset:0 , atIndex: 1)
-            renderEncoder.setFragmentTexture(texture, atIndex: 0)
-            renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 6, instanceCount: 1)
-            
-            renderEncoder.popDebugGroup()
-            renderEncoder.endEncoding()
-                
-            commandBuffer.presentDrawable(currentDrawable)
-        }
-        
-        // bufferIndex matches the current semaphore controled frame index to ensure writing occurs at the correct region in the vertex buffer
-        bufferIndex = (bufferIndex + 1) % MaxBuffers
-        
-        commandBuffer.commit()
-
-        frameCounter = frameCounter + 1*/
     }
     
     
