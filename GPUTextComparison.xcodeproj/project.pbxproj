@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C2749D5D1CC88A4300C294BE /* GlyphAtlas.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */; };
 		C2A579FB1CBB42DB00BC11A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A579FA1CBB42DB00BC11A1 /* AppDelegate.swift */; };
 		C2A579FD1CBB42DB00BC11A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C2A579FC1CBB42DB00BC11A1 /* Assets.xcassets */; };
 		C2A57A001CBB42DB00BC11A1 /* MainMenu.xib in Resources */ = {isa = PBXBuildFile; fileRef = C2A579FE1CBB42DB00BC11A1 /* MainMenu.xib */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlyphAtlas.swift; sourceTree = "<group>"; };
 		C2A579F71CBB42DB00BC11A1 /* GPUTextComparison.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GPUTextComparison.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C2A579FA1CBB42DB00BC11A1 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C2A579FC1CBB42DB00BC11A1 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -66,6 +68,7 @@
 				C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */,
 				C2A57A261CBB817100BC11A1 /* Shaders.metal */,
 				C2A57A2A1CC2E60500BC11A1 /* Layout.swift */,
+				C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */,
 			);
 			path = GPUTextComparison;
 			sourceTree = "<group>";
@@ -143,6 +146,7 @@
 			files = (
 				C2A57A291CC2C8AA00BC11A1 /* DisplayViewController.swift in Sources */,
 				C2A57A271CBB817100BC11A1 /* Shaders.metal in Sources */,
+				C2749D5D1CC88A4300C294BE /* GlyphAtlas.swift in Sources */,
 				C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */,
 				C2A579FB1CBB42DB00BC11A1 /* AppDelegate.swift in Sources */,
 			);

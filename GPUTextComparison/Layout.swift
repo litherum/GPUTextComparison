@@ -8,9 +8,7 @@
 
 import Cocoa
 
-
-
-    func layout() -> [Frame] {
+    func layout() -> [DisplayViewController.Frame] {
         let path = NSBundle.mainBundle().pathForResource("shakespeare", ofType: "txt")!
         var encoding = UInt(0)
         var string = ""
@@ -29,7 +27,7 @@ import Cocoa
         let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string, [kCTFontAttributeName as String : font])
         let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
         var frameStart = CFIndex(0)
-        var result : [Frame] = []
+        var result : [DisplayViewController.Frame] = []
         while true {
             let frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(frameStart, 0), CGPathCreateWithRect(CGRectMake(0, 0, 800, 600), nil), nil)
             let visibleRange = CTFrameGetVisibleStringRange(frame)
@@ -40,7 +38,7 @@ import Cocoa
             var lineOrigins = Array<CGPoint>(count: lines.count, repeatedValue: CGPointZero)
             CTFrameGetLineOrigins(frame, CFRangeMake(0, lines.count), &lineOrigins)
 
-            var resultFrame = Frame()
+            var resultFrame = DisplayViewController.Frame()
 
             for i in 0 ..< lines.count {
                 let line = lines[i] as! CTLine
@@ -57,7 +55,7 @@ import Cocoa
                     let attributes = CTRunGetAttributes(run) as NSDictionary
                     let usedFont = attributes[kCTFontAttributeName as String] as! CTFont
                     for j in 0 ..< glyphCount {
-                        resultFrame.append(Glyph(identity: GlyphIdentity(glyphID: glyphs[j], font: usedFont), position: CGPointMake(positions[j].x + lineOrigin.x, positions[j].y + lineOrigin.y)))
+                        resultFrame.append(DisplayViewController.Glyph(glyphID: glyphs[j], font: usedFont, position: CGPointMake(positions[j].x + lineOrigin.x, positions[j].y + lineOrigin.y)))
                     }
                 }
             }

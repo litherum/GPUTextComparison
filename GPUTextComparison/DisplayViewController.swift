@@ -35,27 +35,21 @@ let textureCoordinateData:[Float] =
     0.0, 0.0
 ]
 
-struct GlyphIdentity {
+struct GlyphCacheKey {
     let glyphID: CGGlyph
     let font: CTFont
+    let subpixelPosition: CGPoint
 }
 
-extension GlyphIdentity: Hashable {
+extension GlyphCacheKey: Hashable {
     var hashValue: Int {
-        return glyphID.hashValue ^ Int(CFHash(font))
+        return glyphID.hashValue ^ Int(CFHash(font)) ^ subpixelPosition.x.hashValue ^ subpixelPosition.y.hashValue
     }
 }
 
-func ==(lhs: GlyphIdentity, rhs: GlyphIdentity) -> Bool {
-    return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
+func ==(lhs: GlyphCacheKey, rhs: GlyphCacheKey) -> Bool {
+    return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font) && lhs.subpixelPosition == rhs.subpixelPosition
 }
-
-struct Glyph {
-    let identity : GlyphIdentity
-    let position : CGPoint
-}
-
-typealias Frame = [Glyph]
 
 class DisplayViewController: NSViewController, MTKViewDelegate {
     
@@ -72,14 +66,24 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
 
     var frameCounter = 0
 
-    struct GlyphOccupation {
+    var glyphAtlas: GlyphAtlas! = nil
+
+    struct GlyphCacheValue {
         var texture: MTLTexture
         var space: CGRect
     }
 
+    struct Glyph {
+        let glyphID: CGGlyph
+        let font: CTFont
+        let position : CGPoint
+    }
+
+    typealias Frame = [Glyph]
+
     var frames : [Frame] = []
 
-    var glyphUtilizations: [GlyphIdentity : GlyphOccupation] = [:]
+    var cache: [GlyphCacheKey : GlyphCacheValue] = [:]
 
     override func viewDidLoad() {
         
@@ -100,7 +104,6 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
     }
     
     func loadAssets() {
-        
         // load any resources required for rendering
         let view = self.view as! MTKView
         commandQueue = device.newCommandQueue()
@@ -122,10 +125,12 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
             fatalError("Failed to create pipeline state, error \(error)")
         }
 
-        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(.RGBA8Unorm, width: 800, height: 600, mipmapped: false)
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(.R8Unorm, width: 800, height: 600, mipmapped: false)
         texture = device.newTextureWithDescriptor(textureDescriptor)
-        let newData = Array<UInt8>(count: 800 * 600 * 4, repeatedValue: UInt8(255))
-        texture.replaceRegion(MTLRegionMake2D(0, 0, 800, 600), mipmapLevel: 0, withBytes: newData, bytesPerRow: 800 * 4)
+        let newData = Array<UInt8>(count: 800 * 600, repeatedValue: UInt8(255))
+        texture.replaceRegion(MTLRegionMake2D(0, 0, 800, 600), mipmapLevel: 0, withBytes: newData, bytesPerRow: 800)
+
+        glyphAtlas = GlyphAtlas(texture: texture)
     }
 
     /*func runBenchmark(frames: [Frame]) {
@@ -176,7 +181,7 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         return true
     }
 
-    func appendQuad(position: CGPoint, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int) {
+    func appendQuad(position: CGPoint, textureRect: CGRect, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int) {
         assert(canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
         
         let pVertexData = vertexBuffer.contents()
@@ -201,32 +206,37 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         let vTextureCoordinateData = UnsafeMutablePointer<Float>(pTextureCoordinateData + textureCoordinateBufferUtilization)
         let newTextureCoordinates: [Float] =
         [
-            0.0, 0.0,
-            0.0, 1.0,
-            1.0, 1.0,
+            Float(textureRect.origin.x), Float(textureRect.origin.y),
+            Float(textureRect.origin.x), Float(textureRect.maxY),
+            Float(textureRect.maxX), Float(textureRect.maxY),
 
-            1.0, 1.0,
-            1.0, 0.0,
-            0.0, 0.0
+            Float(textureRect.maxX), Float(textureRect.maxY),
+            Float(textureRect.maxX), Float(textureRect.origin.y),
+            Float(textureRect.origin.x), Float(textureRect.origin.y),
         ]
         
         vTextureCoordinateData.initializeFrom(newTextureCoordinates)
         textureCoordinateBufferUtilization = textureCoordinateBufferUtilization + sizeofValue(newTextureCoordinates[0]) * 2 * 3 * 2
     }
 
-    func issueDraw(renderEncoder: MTLRenderCommandEncoder, vertexBuffer: MTLBuffer, textureCoordinateBuffer: MTLBuffer, vertexCount: Int) {
+    func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int, inout usedTextureCoordinateBuffers: [MTLBuffer], vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
         renderEncoder.setVertexBuffer(textureCoordinateBuffer, offset:0, atIndex: 1)
         renderEncoder.setFragmentTexture(texture, atIndex: 0)
         renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+
+        vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        vertexBufferUtilization = 0
+        textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
+        textureCoordinateBufferUtilization = 0
     }
     
     func drawInMTKView(view: MTKView) {
+        if frames.count == 0 {
+            return
+        }
         if frameCounter >= frames.count {
             frameCounter = 0
-            if frames.count == 0 {
-                return
-            }
         }
         let frame = frames[frameCounter]
 
@@ -247,16 +257,22 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         var textureCoordinateBufferUtilization = 0
 
         for glyph in frame {
-            if !canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization) {
-                issueDraw(renderEncoder, vertexBuffer: vertexBuffer, textureCoordinateBuffer: textureCoordinateBuffer, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
-                vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
-                vertexBufferUtilization = 0
-                textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
-                textureCoordinateBufferUtilization = 0
+            /*if !canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization) {
+                issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+            }*/
+            let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font, subpixelPosition: CGPointMake(0, 0))
+            var box = CGRectZero
+            if let cacheLookup = cache[key] {
+                box = cacheLookup.space
+            } else {
+                guard let rect = glyphAtlas.put(key.font, glyph: key.glyphID, subpixelPosition: key.subpixelPosition) else {
+                    fatalError()
+                }
+                box = rect
             }
-            appendQuad(glyph.position, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization)
+            appendQuad(glyph.position, textureRect: box, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization)
         }
-        issueDraw(renderEncoder, vertexBuffer: vertexBuffer, textureCoordinateBuffer: textureCoordinateBuffer, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
 
         renderEncoder.endEncoding()
         commandBuffer.presentDrawable(currentDrawable)
