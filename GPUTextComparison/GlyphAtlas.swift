@@ -17,20 +17,36 @@ class GlyphAtlas {
     private let backgroundColor: CGColor
     private let foregroundColor: CGColor
 
+    private var minRow = 0
+    private var maxRow = 0
+    private var column = 0
+
     init(texture: MTLTexture) {
         self.texture = texture
         guard let bitmapContext = CGBitmapContextCreate(nil, texture.width, texture.height, 8, 0, CGColorSpaceCreateDeviceGray(), CGImageAlphaInfo.None.rawValue) else {
             fatalError()
         }
-        backgroundColor = CGColorCreateGenericGray(1.0, 1.0)
-        foregroundColor = CGColorCreateGenericGray(0.0, 1.0)
+        backgroundColor = CGColorCreateGenericGray(0.0, 1.0)
+        foregroundColor = CGColorCreateGenericGray(1.0, 1.0)
         CGContextSetFillColorWithColor(bitmapContext, backgroundColor)
         CGContextFillRect(bitmapContext, CGRectMake(0, 0, CGFloat(texture.width), CGFloat(texture.height)))
         self.bitmapContext = bitmapContext
     }
 
     private func findLocation(width: Int, height: Int) -> MTLRegion? {
-        return MTLRegionMake2D(0, 0, width, height)
+        if column + width < texture.width {
+            let result = MTLRegionMake2D(column, minRow, width, height)
+            column = column + width
+            maxRow = max(maxRow, minRow + height)
+            return result
+        } else if maxRow + height < texture.height {
+            let result = MTLRegionMake2D(0, maxRow, width, height)
+            column = width
+            minRow = maxRow
+            maxRow = minRow + height
+            return result
+        }
+        return nil
     }
 
     // Returns the rect of the bounding box of the glyph in texture coordinates
@@ -48,7 +64,7 @@ class GlyphAtlas {
         let origin = CGPointMake(floor(boundingRectOffset.width - boundingRect.origin.x), floor(boundingRectOffset.height - boundingRect.origin.y))
         var adjustedOrigin = CGPointMake(origin.x + subpixelPosition.x, origin.y + subpixelPosition.y)
 
-        let adjustedBoundingRect = boundingRect.offsetBy(dx: adjustedOrigin.y, dy: adjustedOrigin.y)
+        let adjustedBoundingRect = boundingRect.offsetBy(dx: adjustedOrigin.x, dy: adjustedOrigin.y)
         let affectedPixelsMinCorner = CGPointMake(floor(adjustedBoundingRect.origin.x), floor(adjustedBoundingRect.origin.y))
         let affectedPixelsMaxCorner = CGPointMake(ceil(adjustedBoundingRect.maxX), ceil(adjustedBoundingRect.maxY))
         let affectedPixelsSize = CGSizeMake(affectedPixelsMaxCorner.x - affectedPixelsMinCorner.x, affectedPixelsMaxCorner.y - affectedPixelsMinCorner.y)

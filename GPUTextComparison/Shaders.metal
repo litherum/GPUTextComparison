@@ -9,7 +9,7 @@
 #include <metal_stdlib>
 using namespace metal;
 
-constexpr sampler s = sampler(coord::normalized, 
+constexpr sampler s = sampler(coord::pixel,
                               address::clamp_to_zero,
                               filter::linear);
 
@@ -34,5 +34,5 @@ vertex VertexInOut passThroughVertex(uint vid [[ vertex_id ]],
 fragment half4 passThroughFragment(VertexInOut inFrag [[stage_in]],
                                    texture2d<float> texture [[ texture(0) ]])
 {
-    return half4(texture.sample(s, inFrag.textureCoordinate));
+    return half4(half3(texture.sample(s, inFrag.textureCoordinate).x), 1);
 };

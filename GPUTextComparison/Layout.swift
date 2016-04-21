@@ -23,7 +23,9 @@ import Cocoa
             endIndex = endIndex.successor()
         }
         string = string.substringToIndex(endIndex)*/
-        let font = CTFontCreateWithName("American Typewriter", 6, nil)
+        guard let font = CTFontCreateUIFontForLanguage(.System, 50, nil) else {
+            fatalError()
+        }
         let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string, [kCTFontAttributeName as String : font])
         let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
         var frameStart = CFIndex(0)
