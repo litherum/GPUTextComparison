@@ -14,7 +14,7 @@
         <customObject id="-3" userLabel="Application" customClass="NSObject"/>
         <customObject id="Voe-Tx-rLC" customClass="AppDelegate" customModule="GPUTextComparison" customModuleProvider="target">
             <connections>
-                <outlet property="displayViewController" destination="dEK-nW-5NR" id="Pe8-sR-10Q"/>
+                <outlet property="viewController" destination="dEK-nW-5NR" id="O1v-E4-OOg"/>
                 <outlet property="window" destination="QvC-M9-y7g" id="gIp-Ho-8D9"/>
             </connections>
         </customObject>
@@ -693,7 +693,7 @@
                 </constraints>
             </view>
         </window>
-        <viewController id="dEK-nW-5NR" customClass="DisplayViewController" customModule="GPUTextComparison" customModuleProvider="target">
+        <viewController id="dEK-nW-5NR" customClass="NaiveStencilViewController" customModule="GPUTextComparison" customModuleProvider="target">
             <connections>
                 <outlet property="view" destination="q5D-xK-hCD" id="4WZ-VO-CI1"/>
             </connections>

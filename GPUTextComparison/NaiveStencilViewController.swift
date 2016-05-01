@@ -28,7 +28,10 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
     
     var commandQueue: MTLCommandQueue! = nil
     var pipelineState: MTLRenderPipelineState! = nil
+    var countDepthStencilState: MTLDepthStencilState! = nil
+    var fillDepthStencilState: MTLDepthStencilState! = nil
     var vertexBuffers: [MTLBuffer] = []
+    var stencilTextures: [MTLTexture] = []
 
     let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
     var bufferIndex = 0
@@ -65,6 +68,18 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         
         loadAssets()
     }
+
+    private func createStencilTexture() -> MTLTexture {
+        let textureWidth = Int(view.bounds.width)
+        let textureHeight = Int(view.bounds.height)
+        let textureDescriptor = MTLTextureDescriptor()
+        textureDescriptor.pixelFormat = .Stencil8
+        textureDescriptor.width = textureWidth
+        textureDescriptor.height = textureHeight
+        textureDescriptor.resourceOptions = .StorageModePrivate
+        textureDescriptor.usage = .RenderTarget
+        return device.newTextureWithDescriptor(textureDescriptor)
+    }
     
     private func loadAssets() {
         // load any resources required for rendering
@@ -75,18 +90,44 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         let defaultLibrary = device.newDefaultLibrary()!
         let fragmentProgram = defaultLibrary.newFunctionWithName("stencilFragment")!
         let vertexProgram = defaultLibrary.newFunctionWithName("stencilVertex")!
+
         
         let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
         pipelineStateDescriptor.vertexFunction = vertexProgram
         pipelineStateDescriptor.fragmentFunction = fragmentProgram
         pipelineStateDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineStateDescriptor.sampleCount = view.sampleCount
+        pipelineStateDescriptor.stencilAttachmentPixelFormat = .Stencil8
         
         do {
             try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
         } catch let error {
             fatalError("Failed to create pipeline state, error \(error)")
         }
+
+        let countFrontFaceStencil = MTLStencilDescriptor()
+        countFrontFaceStencil.stencilCompareFunction = .Never
+        countFrontFaceStencil.stencilFailureOperation = .IncrementClamp
+
+        let countBackFaceStencil = MTLStencilDescriptor()
+        countBackFaceStencil.stencilCompareFunction = .Never
+        countBackFaceStencil.depthStencilPassOperation = .DecrementClamp
+
+        let countDepthStencilDescriptor = MTLDepthStencilDescriptor()
+        countDepthStencilDescriptor.frontFaceStencil = countFrontFaceStencil
+        countDepthStencilDescriptor.backFaceStencil = countBackFaceStencil
+        countDepthStencilState = device.newDepthStencilStateWithDescriptor(countDepthStencilDescriptor)
+
+        let fillFrontFaceStencil = MTLStencilDescriptor()
+        fillFrontFaceStencil.stencilCompareFunction = .Equal
+
+        let fillBackFaceStencil = MTLStencilDescriptor()
+        fillBackFaceStencil.stencilCompareFunction = .Equal
+
+        let fillDepthStencilDescriptor = MTLDepthStencilDescriptor()
+        fillDepthStencilDescriptor.frontFaceStencil = fillFrontFaceStencil
+        fillDepthStencilDescriptor.backFaceStencil = fillBackFaceStencil
+        fillDepthStencilState = device.newDepthStencilStateWithDescriptor(fillDepthStencilDescriptor)
     }
 
     private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
@@ -98,6 +139,14 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             let buffer = vertexBuffers.removeLast()
             usedBuffers.append(buffer)
             return buffer
+        }
+    }
+
+    private func acquireStencilBuffer() -> MTLTexture {
+        if stencilTextures.isEmpty {
+            return createStencilTexture()
+        } else {
+            return stencilTextures.removeLast()
         }
     }
 
@@ -165,11 +214,31 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         vertexBufferUtilization = 0
     }
 
+    private class func interpolate(t: CGFloat, p0: CGPoint, p1: CGPoint) -> CGPoint {
+        return CGPointMake(t * p1.x + (1 - t) * p0.x, t * p1.y + (1 - t) * p0.y)
+    }
+
+    private class func interpolateQuadraticBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint) -> CGPoint {
+        let ab = NaiveStencilViewController.interpolate(t, p0: p0, p1: p1)
+        let bc = NaiveStencilViewController.interpolate(t, p0: p1, p1: p2)
+        return NaiveStencilViewController.interpolate(t, p0: ab, p1: bc)
+    }
+
+    private class func interpolateCubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint) -> CGPoint {
+        let ab = NaiveStencilViewController.interpolate(t, p0: p0, p1: p1)
+        let bc = NaiveStencilViewController.interpolate(t, p0: p1, p1: p2)
+        let cd = NaiveStencilViewController.interpolate(t, p0: p2, p1: p3)
+        let abc = NaiveStencilViewController.interpolate(t, p0: ab, p1: bc)
+        let bcd = NaiveStencilViewController.interpolate(t, p0: bc, p1: cd)
+        return NaiveStencilViewController.interpolate(t, p0: abc, p1: bcd)
+    }
+
     private class func approximatePath(path: CGPath) -> CGPath
     {
         let result = CGPathCreateMutable()
         var currentPoint = CGPointZero
         var subpathBegin = CGPointZero
+        let definition = 10
         iterateCGPath(path) {(element : CGPathElement) in
             switch element.type {
             case .MoveToPoint:
@@ -180,10 +249,16 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
                 CGPathAddLineToPoint(result, nil, element.points[0].x, element.points[0].y)
                 currentPoint = element.points[0]
             case .AddQuadCurveToPoint:
-                CGPathAddLineToPoint(result, nil, element.points[1].x, element.points[1].y)
+                for i in 1 ... definition {
+                    let intermediate = NaiveStencilViewController.interpolateQuadraticBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1])
+                    CGPathAddLineToPoint(result, nil, intermediate.x, intermediate.y)
+                }
                 currentPoint = element.points[1]
             case .AddCurveToPoint:
-                CGPathAddLineToPoint(result, nil, element.points[2].x, element.points[2].y)
+                for i in 1 ... definition {
+                    let intermediate = NaiveStencilViewController.interpolateCubicBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1], p3: element.points[2])
+                    CGPathAddLineToPoint(result, nil, intermediate.x, intermediate.y)
+                }
                 currentPoint = element.points[2]
             case .CloseSubpath:
                 CGPathAddLineToPoint(result, nil, subpathBegin.x, subpathBegin.y)
@@ -210,8 +285,13 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
             return
         }
+
+        let usedStencilBuffer = acquireStencilBuffer()
+        renderPassDescriptor.stencilAttachment.texture = usedStencilBuffer
+        renderPassDescriptor.stencilAttachment.loadAction = .Clear
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
+        renderEncoder.setDepthStencilState(fillDepthStencilState)
 
         var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
         var vertexBufferUtilization = 0
@@ -245,6 +325,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             dispatch_async(dispatch_get_main_queue(), { [weak self] in
                 if let strongSelf = self {
                     strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
+                    strongSelf.stencilTextures.append(usedStencilBuffer)
                 }
             })
         }

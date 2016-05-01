@@ -13,10 +13,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBOutlet weak var window: NSWindow!
 
-    @IBOutlet var displayViewController: DisplayViewController!
+    @IBOutlet var viewController: NaiveStencilViewController!
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        displayViewController.frames = layout()
+        viewController.frames = layout()
         // Insert code here to initialize your application
     }
 
