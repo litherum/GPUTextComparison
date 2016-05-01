@@ -13,17 +13,17 @@ constexpr sampler s = sampler(coord::pixel,
                               address::clamp_to_zero,
                               filter::linear);
 
-struct VertexInOut
+struct TextureVertexInOut
 {
-    float4  position [[position]];
-    float2  textureCoordinate;
+    float4 position [[position]];
+    float2 textureCoordinate;
 };
 
-vertex VertexInOut passThroughVertex(uint vid [[ vertex_id ]],
-                                     constant float2* position [[ buffer(0) ]],
-                                     constant float2* textureCoordinate [[ buffer(1) ]])
+vertex TextureVertexInOut textureVertex(uint vid [[ vertex_id ]],
+                                        constant float2* position [[ buffer(0) ]],
+                                        constant float2* textureCoordinate [[ buffer(1) ]])
 {
-    VertexInOut outVertex;
+    TextureVertexInOut outVertex;
     
     outVertex.position = float4x4(float4(2.0 / 800.0, 0, 0, 0), float4(0, 2.0 / 600.0, 0, 0), float4(0, 0, 1, 0), float4(-1, -1, 0, 1)) * float4(position[vid], 0, 1);
     outVertex.textureCoordinate = textureCoordinate[vid];
@@ -31,8 +31,28 @@ vertex VertexInOut passThroughVertex(uint vid [[ vertex_id ]],
     return outVertex;
 };
 
-fragment half4 passThroughFragment(VertexInOut inFrag [[stage_in]],
-                                   texture2d<float> texture [[ texture(0) ]])
+fragment half4 textureFragment(TextureVertexInOut inFrag [[stage_in]],
+                               texture2d<float> texture [[ texture(0) ]])
 {
     return half4(half3(texture.sample(s, inFrag.textureCoordinate).x), 1);
+};
+
+struct StencilVertexInOut
+{
+    float4 position [[position]];
+};
+
+vertex StencilVertexInOut stencilVertex(uint vid [[ vertex_id ]],
+                                        constant float2* position [[ buffer(0) ]])
+{
+    StencilVertexInOut outVertex;
+    
+    outVertex.position = float4x4(float4(2.0 / 800.0, 0, 0, 0), float4(0, 2.0 / 600.0, 0, 0), float4(0, 0, 1, 0), float4(-1, -1, 0, 1)) * float4(position[vid], 0, 1);
+    
+    return outVertex;
+};
+
+fragment half4 stencilFragment(TextureVertexInOut inFrag [[stage_in]])
+{
+    return half4(1, 0, 0, 1);
 };

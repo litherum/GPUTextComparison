@@ -13,35 +13,7 @@ let MaxBuffers = 3
 let VertexBufferSize = 1024*1024
 let TextureCoordinateBufferSize = 1024*1024
 
-let vertexData:[Float] =
-[
-    -1.0, -1.0, 0.0, 0.0,
-    -1.0, 1.0, 0.0, 0.0,
-    1.0, 1.0, 0.0, 0.0,
-
-    1.0, 1.0, 0.0, 0.0,
-    1.0, -1.0, 0.0, 0.0,
-    -1.0, -1.0, 0.0, 0.0,
-]
-
-let textureCoordinateData:[Float] =
-[
-    0.0, 0.0,
-    0.0, 1.0,
-    1.0, 1.0,
-
-    1.0, 1.0,
-    1.0, 0.0,
-    0.0, 0.0
-]
-
-struct GlyphCacheKey {
-    let glyphID: CGGlyph
-    let font: CTFont
-    let subpixelPosition: CGPoint
-}
-
-extension GlyphCacheKey: Hashable {
+extension DisplayViewController.GlyphCacheKey: Hashable {
     var hashValue: Int {
         let a = glyphID.hashValue
         let b = subpixelPosition.x.hashValue
@@ -52,7 +24,7 @@ extension GlyphCacheKey: Hashable {
     }
 }
 
-func ==(lhs: GlyphCacheKey, rhs: GlyphCacheKey) -> Bool {
+func ==(lhs: DisplayViewController.GlyphCacheKey, rhs: DisplayViewController.GlyphCacheKey) -> Bool {
     return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font) && lhs.subpixelPosition == rhs.subpixelPosition
 }
 
@@ -71,20 +43,18 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
 
     var frameCounter = 0
 
+    struct GlyphCacheKey {
+        let glyphID: CGGlyph
+        let font: CTFont
+        let subpixelPosition: CGPoint
+    }
+
     var glyphAtlas: GlyphAtlas! = nil
 
     struct GlyphCacheValue {
         var texture: MTLTexture
         var space: CGRect
     }
-
-    struct Glyph {
-        let glyphID: CGGlyph
-        let font: CTFont
-        let position : CGPoint
-    }
-
-    typealias Frame = [Glyph]
 
     var frames : [Frame] = []
 
@@ -108,15 +78,15 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         loadAssets()
     }
     
-    func loadAssets() {
+    private func loadAssets() {
         // load any resources required for rendering
         let view = self.view as! MTKView
         commandQueue = device.newCommandQueue()
         commandQueue.label = "main command queue"
         
         let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.newFunctionWithName("passThroughFragment")!
-        let vertexProgram = defaultLibrary.newFunctionWithName("passThroughVertex")!
+        let fragmentProgram = defaultLibrary.newFunctionWithName("textureFragment")!
+        let vertexProgram = defaultLibrary.newFunctionWithName("textureVertex")!
         
         let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
         pipelineStateDescriptor.vertexFunction = vertexProgram
@@ -140,21 +110,7 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         glyphAtlas = GlyphAtlas(texture: texture)
     }
 
-    /*func runBenchmark(frames: [Frame]) {
-        for frame in frames {
-            for glyph in frame {
-                var occupation = glyphUtilizations[glyph.identity]
-                while occupation == nil {
-                }
-                guard let usedOccupation = occupation else {
-                    fatalError()
-                }
-                
-            }
-        }
-    }*/
-
-    func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -166,7 +122,7 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         }
     }
 
-    func acquireTextureCoordinateBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireTextureCoordinateBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
         if textureCoordinateBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(TextureCoordinateBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -178,7 +134,7 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         }
     }
 
-    func canAppendQuad(vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, textureCoordinateBufferUtilization: Int) -> Bool {
+    private func canAppendQuad(vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, textureCoordinateBufferUtilization: Int) -> Bool {
         if vertexBufferUtilization + sizeof(Float) * 2 * 3 * 2 > vertexBuffer.length {
             return false
         }
@@ -188,7 +144,7 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         return true
     }
 
-    func appendQuad(positionRect: CGRect, textureRect: CGRect, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int) {
+    private func appendQuad(positionRect: CGRect, textureRect: CGRect, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int) {
         assert(canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
         
         let pVertexData = vertexBuffer.contents()
@@ -224,7 +180,7 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         textureCoordinateBufferUtilization = textureCoordinateBufferUtilization + sizeofValue(newTextureCoordinates[0]) * 2 * 3 * 2
     }
 
-    func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int, inout usedTextureCoordinateBuffers: [MTLBuffer], vertexCount: Int) {
+    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int, inout usedTextureCoordinateBuffers: [MTLBuffer], vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
         renderEncoder.setVertexBuffer(textureCoordinateBuffer, offset:0, atIndex: 1)
         renderEncoder.setFragmentTexture(texture, atIndex: 0)
@@ -240,7 +196,7 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         if frames.count == 0 {
             return
         }
-        let slowness = 10
+        let slowness = 1
         if frameCounter >= frames.count * slowness {
             frameCounter = 0
         }
