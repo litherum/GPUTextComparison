@@ -66,6 +66,8 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         view.delegate = self
         view.device = device
         view.sampleCount = 1
+        //view.depthStencilPixelFormat = .Stencil8
+        view.clearStencil = 0
         
         loadAssets()
     }
