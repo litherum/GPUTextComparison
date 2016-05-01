@@ -31,7 +31,6 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
     var countDepthStencilState: MTLDepthStencilState! = nil
     var fillDepthStencilState: MTLDepthStencilState! = nil
     var vertexBuffers: [MTLBuffer] = []
-    var stencilTextures: [MTLTexture] = []
     var fillVertexBuffer: MTLBuffer! = nil
 
     let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
@@ -66,22 +65,9 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         view.delegate = self
         view.device = device
         view.sampleCount = 1
-        //view.depthStencilPixelFormat = .Stencil8
+        view.depthStencilPixelFormat = .Depth32Float_Stencil8
         view.clearStencil = 0
-        
         loadAssets()
-    }
-
-    private func createStencilTexture() -> MTLTexture {
-        let textureWidth = Int(view.bounds.width)
-        let textureHeight = Int(view.bounds.height)
-        let textureDescriptor = MTLTextureDescriptor()
-        textureDescriptor.pixelFormat = .Stencil8
-        textureDescriptor.width = textureWidth
-        textureDescriptor.height = textureHeight
-        textureDescriptor.resourceOptions = .StorageModePrivate
-        textureDescriptor.usage = .RenderTarget
-        return device.newTextureWithDescriptor(textureDescriptor)
     }
     
     private func loadAssets() {
@@ -100,7 +86,8 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         pipelineStateDescriptor.fragmentFunction = fragmentProgram
         pipelineStateDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineStateDescriptor.sampleCount = view.sampleCount
-        pipelineStateDescriptor.stencilAttachmentPixelFormat = .Stencil8
+        pipelineStateDescriptor.depthAttachmentPixelFormat = .Depth32Float_Stencil8
+        pipelineStateDescriptor.stencilAttachmentPixelFormat = .Depth32Float_Stencil8
         
         do {
             try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
@@ -121,15 +108,12 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         countDepthStencilDescriptor.backFaceStencil = countBackFaceStencil
         countDepthStencilState = device.newDepthStencilStateWithDescriptor(countDepthStencilDescriptor)
 
-        let fillFrontFaceStencil = MTLStencilDescriptor()
-        fillFrontFaceStencil.stencilCompareFunction = .NotEqual
-
-        let fillBackFaceStencil = MTLStencilDescriptor()
-        fillBackFaceStencil.stencilCompareFunction = .NotEqual
+        let fillStencil = MTLStencilDescriptor()
+        fillStencil.stencilCompareFunction = .NotEqual
 
         let fillDepthStencilDescriptor = MTLDepthStencilDescriptor()
-        fillDepthStencilDescriptor.frontFaceStencil = fillFrontFaceStencil
-        fillDepthStencilDescriptor.backFaceStencil = fillBackFaceStencil
+        fillDepthStencilDescriptor.frontFaceStencil = fillStencil
+        fillDepthStencilDescriptor.backFaceStencil = fillStencil
         fillDepthStencilState = device.newDepthStencilStateWithDescriptor(fillDepthStencilDescriptor)
 
         let fillVertexData : [Float] = [
@@ -153,14 +137,6 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             let buffer = vertexBuffers.removeLast()
             usedBuffers.append(buffer)
             return buffer
-        }
-    }
-
-    private func acquireStencilBuffer() -> MTLTexture {
-        if stencilTextures.isEmpty {
-            return createStencilTexture()
-        } else {
-            return stencilTextures.removeLast()
         }
     }
 
@@ -286,7 +262,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         if frames.count == 0 {
             return
         }
-        let slowness = 10000000
+        let slowness = 60
         if frameCounter >= frames.count * slowness {
             frameCounter = 0
         }
@@ -300,10 +276,6 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             return
         }
 
-        let usedStencilBuffer = acquireStencilBuffer()
-        renderPassDescriptor.stencilAttachment.texture = usedStencilBuffer
-        renderPassDescriptor.stencilAttachment.loadAction = .Clear
-        renderPassDescriptor.stencilAttachment.clearStencil = 0
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
         renderEncoder.setDepthStencilState(countDepthStencilState)
@@ -345,7 +317,6 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             dispatch_async(dispatch_get_main_queue(), { [weak self] in
                 if let strongSelf = self {
                     strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
-                    strongSelf.stencilTextures.append(usedStencilBuffer)
                 }
             })
         }
