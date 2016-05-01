@@ -106,13 +106,26 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             fatalError("Failed to create pipeline state, error \(error)")
         }
 
+        /*let resetFrontFaceStencil = MTLStencilDescriptor()
+        resetFrontFaceStencil.stencilCompareFunction = .Never
+        resetFrontFaceStencil.stencilFailureOperation = .Replace
+
+        let resetBackFaceStencil = MTLStencilDescriptor()
+        resetBackFaceStencil.stencilCompareFunction = .Never
+        resetBackFaceStencil.depthStencilPassOperation = .Replace
+
+        let resetDepthStencilDescriptor = MTLDepthStencilDescriptor()
+        resetDepthStencilDescriptor.frontFaceStencil = resetFrontFaceStencil
+        resetDepthStencilDescriptor.backFaceStencil = resetBackFaceStencil
+        resetDepthStencilState = device.newDepthStencilStateWithDescriptor(resetDepthStencilDescriptor)*/
+
         let countFrontFaceStencil = MTLStencilDescriptor()
         countFrontFaceStencil.stencilCompareFunction = .Never
-        countFrontFaceStencil.stencilFailureOperation = .IncrementClamp
+        countFrontFaceStencil.stencilFailureOperation = .IncrementWrap
 
         let countBackFaceStencil = MTLStencilDescriptor()
         countBackFaceStencil.stencilCompareFunction = .Never
-        countBackFaceStencil.depthStencilPassOperation = .DecrementClamp
+        countBackFaceStencil.stencilFailureOperation = .DecrementWrap
 
         let countDepthStencilDescriptor = MTLDepthStencilDescriptor()
         countDepthStencilDescriptor.frontFaceStencil = countFrontFaceStencil
@@ -120,10 +133,10 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         countDepthStencilState = device.newDepthStencilStateWithDescriptor(countDepthStencilDescriptor)
 
         let fillFrontFaceStencil = MTLStencilDescriptor()
-        fillFrontFaceStencil.stencilCompareFunction = .Equal
+        fillFrontFaceStencil.stencilCompareFunction = .NotEqual
 
         let fillBackFaceStencil = MTLStencilDescriptor()
-        fillBackFaceStencil.stencilCompareFunction = .Equal
+        fillBackFaceStencil.stencilCompareFunction = .NotEqual
 
         let fillDepthStencilDescriptor = MTLDepthStencilDescriptor()
         fillDepthStencilDescriptor.frontFaceStencil = fillFrontFaceStencil
@@ -328,6 +341,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
 
             appendSimplifiedPath(approximatedPath, position: glyph.position, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization)
         }
+
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
 
         renderEncoder.setDepthStencilState(fillDepthStencilState)
