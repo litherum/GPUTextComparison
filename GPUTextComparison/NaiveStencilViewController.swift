@@ -106,19 +106,6 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             fatalError("Failed to create pipeline state, error \(error)")
         }
 
-        /*let resetFrontFaceStencil = MTLStencilDescriptor()
-        resetFrontFaceStencil.stencilCompareFunction = .Never
-        resetFrontFaceStencil.stencilFailureOperation = .Replace
-
-        let resetBackFaceStencil = MTLStencilDescriptor()
-        resetBackFaceStencil.stencilCompareFunction = .Never
-        resetBackFaceStencil.depthStencilPassOperation = .Replace
-
-        let resetDepthStencilDescriptor = MTLDepthStencilDescriptor()
-        resetDepthStencilDescriptor.frontFaceStencil = resetFrontFaceStencil
-        resetDepthStencilDescriptor.backFaceStencil = resetBackFaceStencil
-        resetDepthStencilState = device.newDepthStencilStateWithDescriptor(resetDepthStencilDescriptor)*/
-
         let countFrontFaceStencil = MTLStencilDescriptor()
         countFrontFaceStencil.stencilCompareFunction = .Never
         countFrontFaceStencil.stencilFailureOperation = .IncrementWrap
@@ -144,13 +131,13 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         fillDepthStencilState = device.newDepthStencilStateWithDescriptor(fillDepthStencilDescriptor)
 
         let fillVertexData : [Float] = [
-        0, 0,
-        0, Float(view.bounds.height),
-        Float(view.bounds.width), Float(view.bounds.height),
+            0, 0,
+            0, Float(view.bounds.height),
+            Float(view.bounds.width), Float(view.bounds.height),
 
-        Float(view.bounds.width), Float(view.bounds.height),
-        Float(view.bounds.width), 0,
-        0, 0
+            Float(view.bounds.width), Float(view.bounds.height),
+            Float(view.bounds.width), 0,
+            0, 0
         ]
         fillVertexBuffer = device.newBufferWithBytes(fillVertexData, length: sizeofValue(fillVertexData[0]) * fillVertexData.count, options: .StorageModeManaged)
     }
@@ -314,6 +301,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         let usedStencilBuffer = acquireStencilBuffer()
         renderPassDescriptor.stencilAttachment.texture = usedStencilBuffer
         renderPassDescriptor.stencilAttachment.loadAction = .Clear
+        renderPassDescriptor.stencilAttachment.clearStencil = 0
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
         renderEncoder.setDepthStencilState(countDepthStencilState)
