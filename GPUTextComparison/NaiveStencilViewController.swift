@@ -32,6 +32,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
     var fillDepthStencilState: MTLDepthStencilState! = nil
     var vertexBuffers: [MTLBuffer] = []
     var stencilTextures: [MTLTexture] = []
+    var fillVertexBuffer: MTLBuffer! = nil
 
     let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
     var bufferIndex = 0
@@ -128,6 +129,17 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         fillDepthStencilDescriptor.frontFaceStencil = fillFrontFaceStencil
         fillDepthStencilDescriptor.backFaceStencil = fillBackFaceStencil
         fillDepthStencilState = device.newDepthStencilStateWithDescriptor(fillDepthStencilDescriptor)
+
+        let fillVertexData : [Float] = [
+        0, 0,
+        0, Float(view.bounds.height),
+        Float(view.bounds.width), Float(view.bounds.height),
+
+        Float(view.bounds.width), Float(view.bounds.height),
+        Float(view.bounds.width), 0,
+        0, 0
+        ]
+        fillVertexBuffer = device.newBufferWithBytes(fillVertexData, length: sizeofValue(fillVertexData[0]) * fillVertexData.count, options: .StorageModeManaged)
     }
 
     private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
@@ -291,7 +303,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         renderPassDescriptor.stencilAttachment.loadAction = .Clear
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
-        renderEncoder.setDepthStencilState(fillDepthStencilState)
+        renderEncoder.setDepthStencilState(countDepthStencilState)
 
         var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
         var vertexBufferUtilization = 0
@@ -317,6 +329,10 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             appendSimplifiedPath(approximatedPath, position: glyph.position, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization)
         }
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+
+        renderEncoder.setDepthStencilState(fillDepthStencilState)
+        renderEncoder.setVertexBuffer(fillVertexBuffer, offset: 0, atIndex: 0)
+        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 6, instanceCount: 1)
 
         renderEncoder.endEncoding()
         commandBuffer.presentDrawable(currentDrawable)
