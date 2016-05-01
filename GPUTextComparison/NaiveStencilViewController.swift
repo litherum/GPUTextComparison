@@ -262,7 +262,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         if frames.count == 0 {
             return
         }
-        let slowness = 60
+        let slowness = 1
         if frameCounter >= frames.count * slowness {
             frameCounter = 0
         }

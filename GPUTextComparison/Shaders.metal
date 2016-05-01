@@ -54,5 +54,5 @@ vertex StencilVertexInOut stencilVertex(uint vid [[ vertex_id ]],
 
 fragment half4 stencilFragment(TextureVertexInOut inFrag [[stage_in]])
 {
-    return half4(1, 0, 0, 1);
+    return half4(1, 1, 1, 1);
 };
