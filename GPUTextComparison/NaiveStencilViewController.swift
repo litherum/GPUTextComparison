@@ -44,7 +44,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
     }
 
     struct GlyphCacheValue {
-        var approximation: CGPath
+        var geometry: [Float]
     }
 
     var frames : [Frame] = []
@@ -147,55 +147,6 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         return true
     }
 
-    private func appendSimplifiedPath(path: CGPath, position: CGPoint, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int) {
-        var newVertices: [Float] = []
-        var previousPoint : CGPoint?
-        var subpathBegin = CGPointZero
-        iterateCGPath(path) {(element : CGPathElement) in
-            switch element.type {
-            case .MoveToPoint:
-                subpathBegin = element.points[0]
-                previousPoint = subpathBegin
-            case .AddLineToPoint:
-                if let p = previousPoint {
-                    newVertices.append(Float(0 + position.x))
-                    newVertices.append(Float(0 + position.y))
-
-                    newVertices.append(Float(p.x + position.x))
-                    newVertices.append(Float(p.y + position.y))
-
-                    newVertices.append(Float(element.points[0].x + position.x))
-                    newVertices.append(Float(element.points[0].y + position.y))
-                }
-                previousPoint = element.points[0]
-            case .AddQuadCurveToPoint:
-                fatalError()
-            case .AddCurveToPoint:
-                fatalError()
-            case .CloseSubpath:
-                if let p = previousPoint {
-                    newVertices.append(Float(0 + position.x))
-                    newVertices.append(Float(0 + position.y))
-
-                    newVertices.append(Float(p.x + position.x))
-                    newVertices.append(Float(p.y + position.y))
-
-                    newVertices.append(Float(subpathBegin.x + position.x))
-                    newVertices.append(Float(subpathBegin.y + position.y))
-                }
-                previousPoint = subpathBegin
-            }
-        }
-        
-        assert(canAppendVertices(newVertices, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization))
-
-        let pVertexData = vertexBuffer.contents()
-        let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
-        
-        vVertexData.initializeFrom(newVertices)
-        vertexBufferUtilization = vertexBufferUtilization + sizeofValue(newVertices[0]) * newVertices.count
-    }
-
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
         renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
@@ -257,6 +208,48 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         }
         return result
     }
+
+    private class func generateGeometry(path: CGPath) -> [Float] {
+        var result: [Float] = []
+        var previousPoint : CGPoint?
+        var subpathBegin = CGPointZero
+        iterateCGPath(path) {(element : CGPathElement) in
+            switch element.type {
+            case .MoveToPoint:
+                subpathBegin = element.points[0]
+                previousPoint = subpathBegin
+            case .AddLineToPoint:
+                if let p = previousPoint {
+                    result.append(0)
+                    result.append(0)
+
+                    result.append(Float(p.x))
+                    result.append(Float(p.y))
+
+                    result.append(Float(element.points[0].x))
+                    result.append(Float(element.points[0].y))
+                }
+                previousPoint = element.points[0]
+            case .AddQuadCurveToPoint:
+                fatalError()
+            case .AddCurveToPoint:
+                fatalError()
+            case .CloseSubpath:
+                if let p = previousPoint {
+                    result.append(0)
+                    result.append(0)
+
+                    result.append(Float(p.x))
+                    result.append(Float(p.y))
+
+                    result.append(Float(subpathBegin.x))
+                    result.append(Float(subpathBegin.y))
+                }
+                previousPoint = subpathBegin
+            }
+        }
+        return result
+    }
     
     func drawInMTKView(view: MTKView) {
         if frames.count == 0 {
@@ -287,21 +280,32 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
             // FIXME: Gracefully handle full geometry buffers
 
             let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font)
-            var approximatedPath : CGPath!
+            var geometry : [Float] = []
             if let cacheLookup = cache[key] {
-                approximatedPath = cacheLookup.approximation
+                geometry = cacheLookup.geometry
             } else {
                 if let glyphPath = CTFontCreatePathForGlyph(glyph.font, glyph.glyphID, nil) {
-                    approximatedPath = NaiveStencilViewController.approximatePath(glyphPath)
-                    cache[key] = GlyphCacheValue(approximation: approximatedPath)
+                    let approximatedPath = NaiveStencilViewController.approximatePath(glyphPath)
+                    geometry = NaiveStencilViewController.generateGeometry(approximatedPath)
                 }
+                cache[key] = GlyphCacheValue(geometry: geometry)
             }
 
-            if approximatedPath == nil || CGPathGetBoundingBox(approximatedPath) == CGRectZero {
+            if geometry.isEmpty {
                 continue
             }
 
-            appendSimplifiedPath(approximatedPath, position: glyph.position, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization)
+            assert(canAppendVertices(geometry, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization))
+
+            let pVertexData = vertexBuffer.contents()
+            let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+
+            assert(geometry.count % 2 == 0)
+            for i in 0 ..< geometry.count / 2 {
+                vVertexData[i * 2] = geometry[i * 2] + Float(glyph.position.x)
+                vVertexData[i * 2 + 1] = geometry[i * 2 + 1] + Float(glyph.position.y)
+            }
+            vertexBufferUtilization = vertexBufferUtilization + sizeofValue(geometry[0]) * geometry.count
         }
 
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
