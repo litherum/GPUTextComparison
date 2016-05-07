@@ -86,11 +86,22 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         let fragmentProgram = defaultLibrary.newFunctionWithName("textureFragment")!
         let vertexProgram = defaultLibrary.newFunctionWithName("textureVertex")!
         
+        let vertexDescriptor = MTLVertexDescriptor()
+        vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
+        vertexDescriptor.layouts[1].stride = sizeof(Float) * 2
+        vertexDescriptor.attributes[0].format = .Float2
+        vertexDescriptor.attributes[0].offset = 0
+        vertexDescriptor.attributes[0].bufferIndex = 0
+        vertexDescriptor.attributes[1].format = .Float2
+        vertexDescriptor.attributes[1].offset = 0
+        vertexDescriptor.attributes[1].bufferIndex = 1
+        
         let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
         pipelineStateDescriptor.vertexFunction = vertexProgram
         pipelineStateDescriptor.fragmentFunction = fragmentProgram
         pipelineStateDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineStateDescriptor.sampleCount = view.sampleCount
+        pipelineStateDescriptor.vertexDescriptor = vertexDescriptor
         
         do {
             try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
