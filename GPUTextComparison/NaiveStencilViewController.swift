@@ -80,6 +80,11 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         let fragmentProgram = defaultLibrary.newFunctionWithName("stencilFragment")!
         let vertexProgram = defaultLibrary.newFunctionWithName("stencilVertex")!
 
+        let vertexDescriptor = MTLVertexDescriptor()
+        vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
+        vertexDescriptor.attributes[0].format = .Float2
+        vertexDescriptor.attributes[0].offset = 0
+        vertexDescriptor.attributes[0].bufferIndex = 0
         
         let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
         pipelineStateDescriptor.vertexFunction = vertexProgram
@@ -88,6 +93,7 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
         pipelineStateDescriptor.sampleCount = view.sampleCount
         pipelineStateDescriptor.depthAttachmentPixelFormat = .Depth32Float_Stencil8
         pipelineStateDescriptor.stencilAttachmentPixelFormat = .Depth32Float_Stencil8
+        pipelineStateDescriptor.vertexDescriptor = vertexDescriptor
         
         do {
             try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
