@@ -13,7 +13,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBOutlet weak var window: NSWindow!
 
-    @IBOutlet var viewController: NaiveStencilViewController!
+    @IBOutlet var viewController: TextViewController!
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
         viewController.frames = layout()

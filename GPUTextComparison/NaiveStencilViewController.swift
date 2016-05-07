@@ -22,7 +22,7 @@ func ==(lhs: NaiveStencilViewController.GlyphCacheKey, rhs: NaiveStencilViewCont
     return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
 }
 
-class NaiveStencilViewController: NSViewController, MTKViewDelegate {
+class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     
     var device: MTLDevice! = nil
     
@@ -46,8 +46,6 @@ class NaiveStencilViewController: NSViewController, MTKViewDelegate {
     struct GlyphCacheValue {
         var geometry: [Float]
     }
-
-    var frames : [Frame] = []
 
     var cache: [GlyphCacheKey : GlyphCacheValue] = [:]
 

@@ -17,6 +17,7 @@
 		C2A57A271CBB817100BC11A1 /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A261CBB817100BC11A1 /* Shaders.metal */; };
 		C2A57A291CC2C8AA00BC11A1 /* DisplayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */; };
 		C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A2A1CC2E60500BC11A1 /* Layout.swift */; };
+		C2EA43541CDEB066007D8190 /* TextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EA43531CDEB066007D8190 /* TextViewController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -34,6 +35,7 @@
 		C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayViewController.swift; sourceTree = "<group>"; };
 		C2A57A261CBB817100BC11A1 /* Shaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		C2A57A2A1CC2E60500BC11A1 /* Layout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
+		C2EA43531CDEB066007D8190 /* TextViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextViewController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -74,6 +76,7 @@
 				C2A57A261CBB817100BC11A1 /* Shaders.metal */,
 				C2A57A2A1CC2E60500BC11A1 /* Layout.swift */,
 				C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */,
+				C2EA43531CDEB066007D8190 /* TextViewController.swift */,
 				C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */,
 				C2749D5E1CD5B46F00C294BE /* NaiveStencilViewController.swift */,
 				C2749D611CD5BFB700C294BE /* CGPathIterator.c */,
@@ -161,6 +164,7 @@
 				C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */,
 				C2749D631CD5BFB700C294BE /* CGPathIterator.c in Sources */,
 				C2A579FB1CBB42DB00BC11A1 /* AppDelegate.swift in Sources */,
+				C2EA43541CDEB066007D8190 /* TextViewController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

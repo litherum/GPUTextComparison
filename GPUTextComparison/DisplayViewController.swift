@@ -28,7 +28,7 @@ func ==(lhs: DisplayViewController.GlyphCacheKey, rhs: DisplayViewController.Gly
     return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font) && lhs.subpixelPosition == rhs.subpixelPosition
 }
 
-class DisplayViewController: NSViewController, MTKViewDelegate {
+class DisplayViewController: TextViewController, MTKViewDelegate {
     
     var device: MTLDevice! = nil
     
@@ -55,8 +55,6 @@ class DisplayViewController: NSViewController, MTKViewDelegate {
         var texture: MTLTexture
         var space: CGRect
     }
-
-    var frames : [Frame] = []
 
     var cache: [GlyphCacheKey : GlyphCacheValue] = [:]
 
