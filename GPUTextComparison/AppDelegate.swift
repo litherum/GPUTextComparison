@@ -13,10 +13,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     @IBOutlet weak var window: NSWindow!
 
-    @IBOutlet var viewController: TextViewController!
+    @IBOutlet var viewController: NSViewController!
 
     func applicationDidFinishLaunching(aNotification: NSNotification) {
-        viewController.frames = layout()
+        guard let textViewController = viewController as? TextViewController else {
+            fatalError()
+        }
+        textViewController.frames = layout()
         // Insert code here to initialize your application
     }
 

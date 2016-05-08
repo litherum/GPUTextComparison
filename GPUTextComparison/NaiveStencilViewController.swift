@@ -23,7 +23,7 @@ func ==(lhs: NaiveStencilViewController.GlyphCacheKey, rhs: NaiveStencilViewCont
 }
 
 class NaiveStencilViewController: TextViewController, MTKViewDelegate {
-    
+
     var device: MTLDevice! = nil
     
     var commandQueue: MTLCommandQueue! = nil

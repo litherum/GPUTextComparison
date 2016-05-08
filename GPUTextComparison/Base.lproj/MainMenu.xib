@@ -693,7 +693,7 @@
                 </constraints>
             </view>
         </window>
-        <viewController id="dEK-nW-5NR" customClass="DisplayViewController" customModule="GPUTextComparison" customModuleProvider="target">
+        <viewController id="dEK-nW-5NR" customClass="LoopBlinnViewController" customModule="GPUTextComparison" customModuleProvider="target">
             <connections>
                 <outlet property="view" destination="q5D-xK-hCD" id="4WZ-VO-CI1"/>
             </connections>
