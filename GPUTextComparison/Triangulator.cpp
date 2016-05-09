@@ -48,25 +48,6 @@ typedef CGAL::Triangulation_data_structure_2<Vb,Fb>              TDS;
 typedef CGAL::Exact_predicates_tag                               Itag;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag> CDT;
 
-static CGPoint interpolate(CGFloat t, CGPoint p0, CGPoint p1) {
-    return CGPointMake(t * p1.x + (1 - t) * p0.x, t * p1.y + (1 - t) * p0.y);
-}
-
-static CGPoint interpolateQuadraticBezier(CGFloat t, CGPoint p0, CGPoint p1, CGPoint p2) {
-    auto ab = interpolate(t, p0, p1);
-    auto bc = interpolate(t, p1, p2);
-    return interpolate(t, ab, bc);
-}
-
-static CGPoint interpolateCubicBezier(CGFloat t, CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
-    auto ab = interpolate(t, p0, p1);
-    auto bc = interpolate(t, p1, p2);
-    auto cd = interpolate(t, p2, p3);
-    auto abc = interpolate(t, ab, bc);
-    auto bcd = interpolate(t, bc, cd);
-    return interpolate(t, abc, bcd);
-}
-
 class Triangulator {
 public:
     Triangulator(CGPathRef path) : path(path) {
