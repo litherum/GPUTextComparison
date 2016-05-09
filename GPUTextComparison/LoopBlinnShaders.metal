@@ -24,7 +24,7 @@ vertex LoopBlinnVertexInOut loopBlinnVertex(LoopBlinnVertexIn vertexIn [[ stage_
 {
     LoopBlinnVertexInOut outVertex;
     
-    outVertex.position = float4x4(float4(2.0 / 800.0, 0, 0, 0), float4(0, 2.0 / 600.0, 0, 0), float4(0, 0, 1, 0), float4(-1, -1, 0, 1)) * float4(vertexIn.position, 0, 1);
+    outVertex.position = float4x4(float4(2.0 / 800.0, 0, 0, 0), float4(0, 2.0 / 600.0, 0, 0), float4(0, 0, 1, 0), float4(-1, -1, 0, 1)) * float4(4 * vertexIn.position, 0, 1);
     outVertex.coefficient = vertexIn.coefficient;
     
     return outVertex;
@@ -32,11 +32,18 @@ vertex LoopBlinnVertexInOut loopBlinnVertex(LoopBlinnVertexIn vertexIn [[ stage_
 
 fragment half4 loopBlinnFragment(LoopBlinnVertexInOut inFrag [[ stage_in ]])
 {
-    /*float u = inFrag.coefficient.x;
-    float v = inFrag.coefficient.y;
-    float result = u * u - v;
-    float gradient = length(float2(dfdx(result), dfdy(result)));
-    float dist = -result / gradient;
-    return half4(dist, dist, dist, 1);*/
-    return half4(1, 1, 1, 1);
+    float offsetU = inFrag.coefficient.x;
+    float offsetV = inFrag.coefficient.y;
+    float flag = offsetU < 0;
+    flag = flag * 2 - 1;
+
+    float u = abs(offsetU) - 1;
+    float v = abs(offsetV) - 1;
+
+    float result = flag * (u * u - v);
+    /*float gradient = length(float2(dfdx(result), dfdy(result)));
+    float dist = -result / gradient;*/
+    float dist = result <= 0;
+    return half4(dist, dist, dist, 1);
+    //return half4(1, 1, 1, 1);
 };

@@ -173,7 +173,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         if frames.count == 0 {
             return
         }
-        let slowness = 1
+        let slowness = 100000000000
         if frameCounter >= frames.count * slowness {
             frameCounter = 0
         }

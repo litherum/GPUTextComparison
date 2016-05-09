@@ -80,18 +80,61 @@ public:
                 auto p0 = facesIterator->vertex(0)->point();
                 auto p1 = facesIterator->vertex(1)->point();
                 auto p2 = facesIterator->vertex(2)->point();
-                receiver({CGPointMake(p0.x(), p0.y()), {0, 0}},
-                         {CGPointMake(p1.x(), p1.y()), {0, 0}},
-                         {CGPointMake(p2.x(), p2.y()), {0, 0}});
+                receiver({ CGPointMake(p0.x(), p0.y()), { 0, 0 } },
+                         { CGPointMake(p1.x(), p1.y()), { 0, 0 } },
+                         { CGPointMake(p2.x(), p2.y()), { 0, 0 } });
             }
+        }
+        
+        for (auto& quadraticCurve : quadraticCurves)
+            receiver(quadraticCurve[0], quadraticCurve[1], quadraticCurve[2]);
+        
+        for (auto& cubicCurve : cubicCurves) {
+            receiver({ cubicCurve[0], { 0, 0 } },
+                     { cubicCurve[1], { 0, 0 } },
+                     { cubicCurve[2], { 0, 0 } });
+            receiver({ cubicCurve[2], { 0, 0 } },
+                     { cubicCurve[3], { 0, 0 } },
+                     { cubicCurve[0], { 0, 0 } });
         }
     }
 
 private:
+    void insertQuadraticCurve(CDT::Vertex_handle& currentVertex, const CGPathElement& element) {
+        auto p0 = CGPointMake(currentVertex->point().x(), currentVertex->point().y());
+        auto p1 = element.points[0];
+        auto p2 = element.points[1];
+        Vertex a = { p0, { 1, 1 } };
+        Vertex b = { p1, { 1.5, 1 } };
+        Vertex c = { p2, { 2, 2 } };
+        auto newVertex = cdt.insert(CDT::Point(p2.x, p2.y));
+        switch (CGAL::orientation(CDT::Point(p0.x, p0.y), CDT::Point(p2.x, p2.y), CDT::Point(p1.x, p1.y))) {
+        case CGAL::LEFT_TURN: {
+            insertConstraint(currentVertex, newVertex);
+            quadraticCurves.push_back({ a, b, c });
+            break;
+        }
+        case CGAL::RIGHT_TURN: {
+            auto middleVertex = cdt.insert(CDT::Point(p1.x, p1.y));
+            insertConstraint(currentVertex, middleVertex);
+            insertConstraint(currentVertex, newVertex);
+            a.coefficient *= -1;
+            b.coefficient *= -1;
+            c.coefficient *= -1;
+            quadraticCurves.push_back({ a, b, c });
+            break;
+        }
+        case CGAL::COLLINEAR: {
+            insertConstraint(currentVertex, newVertex);
+            break;
+        }
+        }
+        currentVertex = newVertex;
+    }
+
     void insert() {
         CDT::Vertex_handle currentVertex;
         CDT::Vertex_handle subpathBegin;
-        unsigned definition = 10;
         iterateCGPath(path, [&](CGPathElement element) {
             switch (element.type) {
             case kCGPathElementMoveToPoint:
@@ -105,15 +148,7 @@ private:
                 break;
             }
             case kCGPathElementAddQuadCurveToPoint: {
-                auto p0 = CGPointMake(currentVertex->point().x(), currentVertex->point().y());
-                auto p1 = element.points[0];
-                auto p2 = element.points[1];
-                for (unsigned i = 1; i <= definition; ++i) {
-                    auto intermediate = interpolateQuadraticBezier(CGFloat(i) / CGFloat(definition), p0, p1, p2);
-                    auto newVertex = cdt.insert(CDT::Point(intermediate.x, intermediate.y));
-                    insertConstraint(currentVertex, newVertex);
-                    currentVertex = newVertex;
-                }
+                insertQuadraticCurve(currentVertex, element);
                 break;
             }
             case kCGPathElementAddCurveToPoint: {
@@ -121,12 +156,10 @@ private:
                 auto p1 = element.points[0];
                 auto p2 = element.points[1];
                 auto p3 = element.points[2];
-                for (unsigned i = 1; i <= definition; ++i) {
-                    auto intermediate = interpolateCubicBezier(CGFloat(i) / CGFloat(definition), p0, p1, p2, p3);
-                    auto newVertex = cdt.insert(CDT::Point(intermediate.x, intermediate.y));
-                    insertConstraint(currentVertex, newVertex);
-                    currentVertex = newVertex;
-                }
+                auto newVertex = cdt.insert(CDT::Point(p3.x, p3.y));
+                insertConstraint(currentVertex, newVertex);
+                cubicCurves.push_back({ p0, p1, p2, p3 });
+                currentVertex = newVertex;
                 break;
             }
             case kCGPathElementCloseSubpath:
@@ -179,6 +212,8 @@ private:
     }
 
     CDT cdt;
+    std::vector<std::array<Vertex, 3>> quadraticCurves;
+    std::vector<std::array<CGPoint, 4>> cubicCurves;
     RetainPtr<CGPathRef> path;
 };
 
