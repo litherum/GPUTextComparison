@@ -88,7 +88,6 @@ public:
     }
 
 private:
-
     void insert() {
         CDT::Vertex_handle currentVertex;
         CDT::Vertex_handle subpathBegin;

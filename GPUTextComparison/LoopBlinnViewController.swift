@@ -11,6 +11,19 @@ import MetalKit
 
 let CoefficientBufferSize = 1024*1024
 
+extension LoopBlinnViewController.GlyphCacheKey: Hashable {
+    var hashValue: Int {
+        let a = glyphID.hashValue
+        let b = Int(CFHash(CTFontDescriptorCopyAttributes(CTFontCopyFontDescriptor(font))))
+        //let b = Int(CFHash(font))
+        return a ^ b
+    }
+}
+
+func ==(lhs: LoopBlinnViewController.GlyphCacheKey, rhs: LoopBlinnViewController.GlyphCacheKey) -> Bool {
+    return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
+}
+
 class LoopBlinnViewController: TextViewController, MTKViewDelegate {
     
     var device: MTLDevice! = nil
@@ -24,6 +37,18 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
     var bufferIndex = 0
     
     var frameCounter = 0
+    
+    struct GlyphCacheKey {
+        let glyphID: CGGlyph
+        let font: CTFont
+    }
+    
+    struct GlyphCacheValue {
+        var positions: [Float]
+        var coefficients: [Float]
+    }
+    
+    var cache: [GlyphCacheKey : GlyphCacheValue] = [:]
     
     override func viewDidLoad() {
         
@@ -100,50 +125,37 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         }
     }
     
-    /*private func canAppendVertices(vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, coefficientBufferUtilization: Int) -> Bool {
-     if vertexBufferUtilization + sizeof(Float) * 2 * 3 * 2 > vertexBuffer.length {
-     return false
-     }
-     if coefficientBufferUtilization + sizeof(Float) * 2 * 3 * 2 > coefficientBuffer.length {
-     return false
-     }
-     return true
-     }*/
-    
-    private func appendQuad(positionRect: CGRect, textureRect: CGRect, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int) {
-        //assert(canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
+    private func canAppendVertices(verticesCount: Int, coefficientsCount: Int, vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, coefficientBufferUtilization: Int) -> Bool {
+        if vertexBufferUtilization + sizeof(Float) * verticesCount > vertexBuffer.length {
+            return false
+        }
+        if coefficientBufferUtilization + sizeof(Float) * coefficientsCount > coefficientBuffer.length {
+            return false
+        }
+        return true
+    }
+
+    private func appendVertices(glyph: Glyph, positions: [Float], coefficients: [Float], vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int) {
+        assert(canAppendVertices(positions.count, coefficientsCount: coefficients.count, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: coefficientBufferUtilization))
         
         let pVertexData = vertexBuffer.contents()
         let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
-        let newVertices: [Float] =
-            [
-                Float(positionRect.origin.x), Float(positionRect.origin.y),
-                Float(positionRect.origin.x), Float(positionRect.maxY),
-                Float(positionRect.maxX), Float(positionRect.maxY),
-                
-                Float(positionRect.maxX), Float(positionRect.maxY),
-                Float(positionRect.maxX), Float(positionRect.origin.y),
-                Float(positionRect.origin.x), Float(positionRect.origin.y),
-                ]
         
-        vVertexData.initializeFrom(newVertices)
-        vertexBufferUtilization = vertexBufferUtilization + sizeofValue(newVertices[0]) * 2 * 3 * 2
+        assert(positions.count % 2 == 0)
+        for i in 0 ..< positions.count / 2 {
+            vVertexData[i * 2] = positions[i * 2] + Float(glyph.position.x)
+            vVertexData[i * 2 + 1] = positions[i * 2 + 1] + Float(glyph.position.y)
+        }
+        vertexBufferUtilization = vertexBufferUtilization + sizeofValue(positions[0]) * positions.count
         
-        let pTextureCoordinateData = textureCoordinateBuffer.contents()
-        let vTextureCoordinateData = UnsafeMutablePointer<Float>(pTextureCoordinateData + textureCoordinateBufferUtilization)
-        let newTextureCoordinates: [Float] =
-            [
-                Float(textureRect.origin.x), Float(textureRect.maxY),
-                Float(textureRect.origin.x), Float(textureRect.origin.y),
-                Float(textureRect.maxX), Float(textureRect.origin.y),
-                
-                Float(textureRect.maxX), Float(textureRect.origin.y),
-                Float(textureRect.maxX), Float(textureRect.maxY),
-                Float(textureRect.origin.x), Float(textureRect.maxY),
-                ]
+        let pCoefficientData = coefficientBuffer.contents()
+        let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
         
-        vTextureCoordinateData.initializeFrom(newTextureCoordinates)
-        textureCoordinateBufferUtilization = textureCoordinateBufferUtilization + sizeofValue(newTextureCoordinates[0]) * 2 * 3 * 2
+        assert(coefficients.count % 2 == 0)
+        for i in 0 ..< coefficients.count {
+            vCoefficientData[i] = coefficients[i]
+        }
+        coefficientBufferUtilization = coefficientBufferUtilization + sizeofValue(coefficients[0]) * coefficients.count
     }
     
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int, inout usedCoefficientBuffers: [MTLBuffer], vertexCount: Int) {
@@ -161,7 +173,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         if frames.count == 0 {
             return
         }
-        let slowness = 10000000000
+        let slowness = 1
         if frameCounter >= frames.count * slowness {
             frameCounter = 0
         }
@@ -187,33 +199,37 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         for glyph in frame {
             // FIXME: Gracefully handle full geometry buffers
 
-            guard let path = CTFontCreatePathForGlyph(glyph.font, glyph.glyphID, nil) else {
+            let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font)
+            var positions : [Float] = []
+            var coefficients : [Float] = []
+            if let cacheLookup = cache[key] {
+                positions = cacheLookup.positions
+                coefficients = cacheLookup.coefficients
+            } else {
+                if let path = CTFontCreatePathForGlyph(glyph.font, glyph.glyphID, nil) {
+                    triangulate(path) { (vertex0, vertex1, vertex2) in
+                        positions.append(Float(vertex0.position.x))
+                        positions.append(Float(vertex0.position.y))
+                        positions.append(Float(vertex1.position.x))
+                        positions.append(Float(vertex1.position.y))
+                        positions.append(Float(vertex2.position.x))
+                        positions.append(Float(vertex2.position.y))
+                        coefficients.append(Float(vertex0.coefficient.x))
+                        coefficients.append(Float(vertex0.coefficient.y))
+                        coefficients.append(Float(vertex1.coefficient.x))
+                        coefficients.append(Float(vertex1.coefficient.y))
+                        coefficients.append(Float(vertex2.coefficient.x))
+                        coefficients.append(Float(vertex2.coefficient.y))
+                    }
+                }
+                cache[key] = GlyphCacheValue(positions: positions, coefficients: coefficients)
+            }
+            
+            if positions.isEmpty || coefficients.isEmpty {
                 continue
             }
 
-            triangulate(path) { (vertex0, vertex1, vertex2) in
-                let pVertexData = vertexBuffer.contents()
-                let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
-
-                let initialVertexData: [Float] = [
-                    Float(glyph.position.x + vertex0.position.x), Float(glyph.position.y + vertex0.position.y),
-                    Float(glyph.position.x + vertex1.position.x), Float(glyph.position.y + vertex1.position.y),
-                    Float(glyph.position.x + vertex2.position.x), Float(glyph.position.y + vertex2.position.y)
-                ]
-                vVertexData.initializeFrom(initialVertexData)
-                vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 2 * 3
-            
-                let pCoefficientData = coefficientBuffer.contents()
-                let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
-            
-                let initialCoefficientData: [Float] = [
-                    Float(vertex0.coefficient.x), Float(vertex0.coefficient.y),
-                    Float(vertex1.coefficient.x), Float(vertex1.coefficient.y),
-                    Float(vertex2.coefficient.x), Float(vertex2.coefficient.y)
-                ]
-                vCoefficientData.initializeFrom(initialCoefficientData)
-                coefficientBufferUtilization = coefficientBufferUtilization + sizeof(Float) * 2 * 3
-            }
+            appendVertices(glyph, positions: positions, coefficients: coefficients, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization)
         }
         
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
