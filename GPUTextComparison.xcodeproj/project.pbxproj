@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		C2749D5D1CC88A4300C294BE /* GlyphAtlas.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */; };
 		C2749D5F1CD5B46F00C294BE /* NaiveStencilViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2749D5E1CD5B46F00C294BE /* NaiveStencilViewController.swift */; };
-		C2749D631CD5BFB700C294BE /* CGPathIterator.c in Sources */ = {isa = PBXBuildFile; fileRef = C2749D611CD5BFB700C294BE /* CGPathIterator.c */; };
+		C2749D631CD5BFB700C294BE /* CGPathIterator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C2749D611CD5BFB700C294BE /* CGPathIterator.cpp */; };
 		C279A7D01CDEBDAC005AACA1 /* LoopBlinnShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = C279A7CF1CDEBDAC005AACA1 /* LoopBlinnShaders.metal */; };
 		C2A579FB1CBB42DB00BC11A1 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A579FA1CBB42DB00BC11A1 /* AppDelegate.swift */; };
 		C2A579FD1CBB42DB00BC11A1 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C2A579FC1CBB42DB00BC11A1 /* Assets.xcassets */; };
@@ -18,6 +18,7 @@
 		C2A57A271CBB817100BC11A1 /* DisplayShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A261CBB817100BC11A1 /* DisplayShaders.metal */; };
 		C2A57A291CC2C8AA00BC11A1 /* DisplayViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */; };
 		C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2A57A2A1CC2E60500BC11A1 /* Layout.swift */; };
+		C2D33A5F1CE005A1006387DE /* Triangulator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C2D33A5E1CE005A1006387DE /* Triangulator.cpp */; };
 		C2EA43541CDEB066007D8190 /* TextViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EA43531CDEB066007D8190 /* TextViewController.swift */; };
 		C2EA43561CDEB702007D8190 /* LoopBlinnViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2EA43551CDEB702007D8190 /* LoopBlinnViewController.swift */; };
 		C2EA43581CDEBC0A007D8190 /* NaiveStencilShaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = C2EA43571CDEBC0A007D8190 /* NaiveStencilShaders.metal */; };
@@ -27,7 +28,7 @@
 		C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlyphAtlas.swift; sourceTree = "<group>"; };
 		C2749D5E1CD5B46F00C294BE /* NaiveStencilViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NaiveStencilViewController.swift; sourceTree = "<group>"; };
 		C2749D601CD5BFB700C294BE /* GPUTextComparison-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "GPUTextComparison-Bridging-Header.h"; sourceTree = "<group>"; };
-		C2749D611CD5BFB700C294BE /* CGPathIterator.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = CGPathIterator.c; sourceTree = "<group>"; };
+		C2749D611CD5BFB700C294BE /* CGPathIterator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CGPathIterator.cpp; sourceTree = "<group>"; };
 		C2749D621CD5BFB700C294BE /* CGPathIterator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CGPathIterator.h; sourceTree = "<group>"; };
 		C279A7CF1CDEBDAC005AACA1 /* LoopBlinnShaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = LoopBlinnShaders.metal; sourceTree = "<group>"; };
 		C2A579F71CBB42DB00BC11A1 /* GPUTextComparison.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GPUTextComparison.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -39,6 +40,9 @@
 		C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DisplayViewController.swift; sourceTree = "<group>"; };
 		C2A57A261CBB817100BC11A1 /* DisplayShaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = DisplayShaders.metal; sourceTree = "<group>"; };
 		C2A57A2A1CC2E60500BC11A1 /* Layout.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Layout.swift; sourceTree = "<group>"; };
+		C2D33A5D1CE0044F006387DE /* Triangulator.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Triangulator.h; sourceTree = "<group>"; };
+		C2D33A5E1CE005A1006387DE /* Triangulator.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = Triangulator.cpp; sourceTree = "<group>"; };
+		C2D33A601CE00CD9006387DE /* RetainPtr.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = RetainPtr.h; sourceTree = "<group>"; };
 		C2EA43531CDEB066007D8190 /* TextViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TextViewController.swift; sourceTree = "<group>"; };
 		C2EA43551CDEB702007D8190 /* LoopBlinnViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LoopBlinnViewController.swift; sourceTree = "<group>"; };
 		C2EA43571CDEBC0A007D8190 /* NaiveStencilShaders.metal */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.metal; path = NaiveStencilShaders.metal; sourceTree = "<group>"; };
@@ -88,9 +92,12 @@
 				C2A57A241CBB6CAE00BC11A1 /* DisplayViewController.swift */,
 				C2749D5E1CD5B46F00C294BE /* NaiveStencilViewController.swift */,
 				C2EA43551CDEB702007D8190 /* LoopBlinnViewController.swift */,
-				C2749D611CD5BFB700C294BE /* CGPathIterator.c */,
+				C2D33A5D1CE0044F006387DE /* Triangulator.h */,
+				C2D33A5E1CE005A1006387DE /* Triangulator.cpp */,
+				C2749D611CD5BFB700C294BE /* CGPathIterator.cpp */,
 				C2749D621CD5BFB700C294BE /* CGPathIterator.h */,
 				C2749D601CD5BFB700C294BE /* GPUTextComparison-Bridging-Header.h */,
+				C2D33A601CE00CD9006387DE /* RetainPtr.h */,
 			);
 			path = GPUTextComparison;
 			sourceTree = "<group>";
@@ -167,12 +174,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				C2749D5F1CD5B46F00C294BE /* NaiveStencilViewController.swift in Sources */,
+				C2D33A5F1CE005A1006387DE /* Triangulator.cpp in Sources */,
 				C2EA43561CDEB702007D8190 /* LoopBlinnViewController.swift in Sources */,
 				C2A57A291CC2C8AA00BC11A1 /* DisplayViewController.swift in Sources */,
 				C2A57A271CBB817100BC11A1 /* DisplayShaders.metal in Sources */,
 				C2749D5D1CC88A4300C294BE /* GlyphAtlas.swift in Sources */,
 				C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */,
-				C2749D631CD5BFB700C294BE /* CGPathIterator.c in Sources */,
+				C2749D631CD5BFB700C294BE /* CGPathIterator.cpp in Sources */,
 				C2EA43581CDEBC0A007D8190 /* NaiveStencilShaders.metal in Sources */,
 				C2A579FB1CBB42DB00BC11A1 /* AppDelegate.swift in Sources */,
 				C279A7D01CDEBDAC005AACA1 /* LoopBlinnShaders.metal in Sources */,
@@ -231,6 +239,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = /opt/local/include;
+				LIBRARY_SEARCH_PATHS = /opt/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -270,6 +280,8 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				HEADER_SEARCH_PATHS = /opt/local/include;
+				LIBRARY_SEARCH_PATHS = /opt/local/lib;
 				MACOSX_DEPLOYMENT_TARGET = 10.11;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
@@ -284,6 +296,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = GPUTextComparison/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				OTHER_LDFLAGS = (
+					"-lCGAL",
+					"-lgmp",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = Litherum.GPUTextComparison;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "GPUTextComparison/GPUTextComparison-Bridging-Header.h";
@@ -299,6 +315,10 @@
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = GPUTextComparison/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				OTHER_LDFLAGS = (
+					"-lCGAL",
+					"-lgmp",
+				);
 				PRODUCT_BUNDLE_IDENTIFIER = Litherum.GPUTextComparison;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_OBJC_BRIDGING_HEADER = "GPUTextComparison/GPUTextComparison-Bridging-Header.h";

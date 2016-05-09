@@ -11,7 +11,17 @@
 
 #import <CoreGraphics/CoreGraphics.h>
 
+#ifdef __cplusplus
+#import <functional>
+extern "C" {
+#endif
+
 typedef void (^CGPathIterator)(CGPathElement);
 void iterateCGPath(CGPathRef, CGPathIterator);
+
+#ifdef __cplusplus
+}
+void iterateCGPath(CGPathRef, std::function<void(CGPathElement)>);
+#endif
 
 #endif /* CGPathIterator_h */

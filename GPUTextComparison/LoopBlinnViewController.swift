@@ -161,7 +161,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         if frames.count == 0 {
             return
         }
-        let slowness = 1
+        let slowness = 10000000000
         if frameCounter >= frames.count * slowness {
             frameCounter = 0
         }
@@ -186,28 +186,34 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         
         for glyph in frame {
             // FIXME: Gracefully handle full geometry buffers
+
+            guard let path = CTFontCreatePathForGlyph(glyph.font, glyph.glyphID, nil) else {
+                continue
+            }
+
+            triangulate(path) { (vertex0, vertex1, vertex2) in
+                let pVertexData = vertexBuffer.contents()
+                let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+
+                let initialVertexData: [Float] = [
+                    Float(glyph.position.x + vertex0.position.x), Float(glyph.position.y + vertex0.position.y),
+                    Float(glyph.position.x + vertex1.position.x), Float(glyph.position.y + vertex1.position.y),
+                    Float(glyph.position.x + vertex2.position.x), Float(glyph.position.y + vertex2.position.y)
+                ]
+                vVertexData.initializeFrom(initialVertexData)
+                vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 2 * 3
             
-            let pVertexData = vertexBuffer.contents()
-            let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+                let pCoefficientData = coefficientBuffer.contents()
+                let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
             
-            let initialVertexData: [Float] = [
-                100, 100,
-                400, 500,
-                700, 200
-            ]
-            vVertexData.initializeFrom(initialVertexData)
-            vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 2 * 3
-            
-            let pCoefficientData = coefficientBuffer.contents()
-            let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
-            
-            let initialCoefficientData: [Float] = [
-                0, 0,
-                0.5, 0,
-                1, 1
-            ]
-            vCoefficientData.initializeFrom(initialCoefficientData)
-            coefficientBufferUtilization = coefficientBufferUtilization + sizeof(Float) * 2 * 3
+                let initialCoefficientData: [Float] = [
+                    Float(vertex0.coefficient.x), Float(vertex0.coefficient.y),
+                    Float(vertex1.coefficient.x), Float(vertex1.coefficient.y),
+                    Float(vertex2.coefficient.x), Float(vertex2.coefficient.y)
+                ]
+                vCoefficientData.initializeFrom(initialCoefficientData)
+                coefficientBufferUtilization = coefficientBufferUtilization + sizeof(Float) * 2 * 3
+            }
         }
         
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))

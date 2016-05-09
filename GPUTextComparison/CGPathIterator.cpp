@@ -8,11 +8,16 @@
 
 #include "CGPathIterator.h"
 
+template <typename T>
 static void applyCallback(void *info, const CGPathElement *element) {
-    CGPathIterator iterator = (CGPathIterator)info;
+    T& iterator = *reinterpret_cast<T*>(info);
     iterator(*element);
 }
 
 void iterateCGPath(CGPathRef path, CGPathIterator iterator) {
-    CGPathApply(path, iterator, &applyCallback);
+    CGPathApply(path, &iterator, &applyCallback<CGPathIterator>);
+}
+
+void iterateCGPath(CGPathRef path, std::function<void(CGPathElement)> function) {
+    CGPathApply(path, &function, &applyCallback<std::function<void(CGPathElement)>>);
 }

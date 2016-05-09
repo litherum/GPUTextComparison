@@ -32,10 +32,11 @@ vertex LoopBlinnVertexInOut loopBlinnVertex(LoopBlinnVertexIn vertexIn [[ stage_
 
 fragment half4 loopBlinnFragment(LoopBlinnVertexInOut inFrag [[ stage_in ]])
 {
-    float u = inFrag.coefficient.x;
+    /*float u = inFrag.coefficient.x;
     float v = inFrag.coefficient.y;
     float result = u * u - v;
     float gradient = length(float2(dfdx(result), dfdy(result)));
     float dist = -result / gradient;
-    return half4(dist, dist, dist, 1);
+    return half4(dist, dist, dist, 1);*/
+    return half4(1, 1, 1, 1);
 };
