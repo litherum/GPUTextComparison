@@ -79,11 +79,11 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         
         let vertexDescriptor = MTLVertexDescriptor()
         vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
-        vertexDescriptor.layouts[1].stride = sizeof(Float) * 2
+        vertexDescriptor.layouts[1].stride = sizeof(Float) * 4
         vertexDescriptor.attributes[0].format = .Float2
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .Float2
+        vertexDescriptor.attributes[1].format = .Float4
         vertexDescriptor.attributes[1].offset = 0
         vertexDescriptor.attributes[1].bufferIndex = 1
         
@@ -216,10 +216,16 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
                         positions.append(Float(vertex2.position.y))
                         coefficients.append(Float(vertex0.coefficient.x))
                         coefficients.append(Float(vertex0.coefficient.y))
+                        coefficients.append(Float(vertex0.coefficient.z))
+                        coefficients.append(Float(vertex0.coefficient.w))
                         coefficients.append(Float(vertex1.coefficient.x))
                         coefficients.append(Float(vertex1.coefficient.y))
+                        coefficients.append(Float(vertex1.coefficient.z))
+                        coefficients.append(Float(vertex1.coefficient.w))
                         coefficients.append(Float(vertex2.coefficient.x))
                         coefficients.append(Float(vertex2.coefficient.y))
+                        coefficients.append(Float(vertex2.coefficient.z))
+                        coefficients.append(Float(vertex2.coefficient.w))
                     }
                 }
                 cache[key] = GlyphCacheValue(positions: positions, coefficients: coefficients)

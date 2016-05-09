@@ -11,13 +11,13 @@ using namespace metal;
 
 struct LoopBlinnVertexIn {
     float2 position [[ attribute(0) ]];
-    float2 coefficient [[ attribute(1) ]];
+    float4 coefficient [[ attribute(1) ]];
 };
 
 struct LoopBlinnVertexInOut
 {
     float4 position [[ position ]];
-    float2 coefficient;
+    float4 coefficient;
 };
 
 vertex LoopBlinnVertexInOut loopBlinnVertex(LoopBlinnVertexIn vertexIn [[ stage_in ]])
@@ -32,7 +32,7 @@ vertex LoopBlinnVertexInOut loopBlinnVertex(LoopBlinnVertexIn vertexIn [[ stage_
 
 fragment half4 loopBlinnFragment(LoopBlinnVertexInOut inFrag [[ stage_in ]])
 {
-    float offsetU = inFrag.coefficient.x;
+    /*float offsetU = inFrag.coefficient.x;
     float offsetV = inFrag.coefficient.y;
     float flag = offsetU < 0;
     flag = flag * 2 - 1;
@@ -41,9 +41,15 @@ fragment half4 loopBlinnFragment(LoopBlinnVertexInOut inFrag [[ stage_in ]])
     float v = abs(offsetV) - 1;
 
     float result = flag * (u * u - v);
-    /*float gradient = length(float2(dfdx(result), dfdy(result)));
-    float dist = -result / gradient;*/
     float dist = result <= 0;
     return half4(dist, dist, dist, 1);
-    //return half4(1, 1, 1, 1);
+    //return half4(1, 1, 1, 1);*/
+
+    float k = inFrag.coefficient.x;
+    float l = inFrag.coefficient.y;
+    float m = inFrag.coefficient.z;
+
+    float result = k * k * k - l * m;
+    float dist = result <= 0;
+    return half4(dist, dist, dist, 1);
 };
