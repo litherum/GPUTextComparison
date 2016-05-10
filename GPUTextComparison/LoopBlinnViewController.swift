@@ -197,7 +197,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         var coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
         var coefficientBufferUtilization = 0
         
-        /*for glyph in frame {
+        for glyph in frame {
             // FIXME: Gracefully handle full geometry buffers
 
             let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font)
@@ -218,15 +218,15 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
                         coefficients.append(Float(vertex0.coefficient.x))
                         coefficients.append(Float(vertex0.coefficient.y))
                         coefficients.append(Float(vertex0.coefficient.z))
-                        coefficients.append(Float(vertex0.coefficient.w))
+                        coefficients.append(0)
                         coefficients.append(Float(vertex1.coefficient.x))
                         coefficients.append(Float(vertex1.coefficient.y))
                         coefficients.append(Float(vertex1.coefficient.z))
-                        coefficients.append(Float(vertex1.coefficient.w))
+                        coefficients.append(0)
                         coefficients.append(Float(vertex2.coefficient.x))
                         coefficients.append(Float(vertex2.coefficient.y))
                         coefficients.append(Float(vertex2.coefficient.z))
-                        coefficients.append(Float(vertex2.coefficient.w))
+                        coefficients.append(0)
                     }
                 }
                 cache[key] = GlyphCacheValue(positions: positions, coefficients: coefficients)
@@ -237,8 +237,9 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
             }
 
             appendVertices(glyph, positions: positions, coefficients: coefficients, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization)
-        }*/
+        }
 
+        /*
         t = t + 1
         let p0 = CGPointMake(100, 300 + 200 * sin(CGFloat(t) / 10.0))
         let p1 = CGPointMake(300, 300)
@@ -292,7 +293,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         vCoefficientData[22] = asdf.c0.z
         vCoefficientData[23] = 0
 
-        vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 24
+        vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 24*/
         
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
         

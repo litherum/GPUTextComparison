@@ -18,7 +18,7 @@ extern "C" {
 
 struct Vertex {
     CGPoint position;
-    vector_float4 coefficient;
+    vector_float3 coefficient;
 };
 
 typedef void (^TriangleReceiver)(struct Vertex, struct Vertex, struct Vertex);

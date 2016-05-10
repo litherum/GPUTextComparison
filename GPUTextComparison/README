@@ -1,3 +1,3 @@
 Input path must:
 - Not self-intersect
-- "Inside" is always on the left as you walk in the direction of the path
+- "Inside" is always on the right as you walk in the direction of the path

@@ -135,6 +135,7 @@ CubicCoefficients cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
         { static_cast<float>(result.v1[0]), static_cast<float>(result.v1[1]), static_cast<float>(result.v1[2]) },
         { static_cast<float>(result.v2[0]), static_cast<float>(result.v2[1]), static_cast<float>(result.v2[2]) },
         { static_cast<float>(result.v3[0]), static_cast<float>(result.v3[1]), static_cast<float>(result.v3[2]) },
-        false, false
+        CGAL::orientation(CGAL::Point_2<K>(p0.x, p0.y), CGAL::Point_2<K>(p3.x, p3.y), CGAL::Point_2<K>(p1.x, p1.y)) == CGAL::RIGHT_TURN,
+        CGAL::orientation(CGAL::Point_2<K>(p0.x, p0.y), CGAL::Point_2<K>(p3.x, p3.y), CGAL::Point_2<K>(p2.x, p2.y)) == CGAL::RIGHT_TURN
     };
 }
