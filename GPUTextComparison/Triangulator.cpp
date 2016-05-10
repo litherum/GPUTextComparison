@@ -184,7 +184,7 @@ private:
     std::array<Vertex, 4> cubicVertices(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
         CGAL::Vector_3<K> b0(p0.x, p0.y, 1);
         CGAL::Vector_3<K> b1(p1.x, p1.y, 1);
-        CGAL::Vector_3<K> b2(p3.x, p2.y, 1);
+        CGAL::Vector_3<K> b2(p2.x, p2.y, 1);
         CGAL::Vector_3<K> b3(p3.x, p3.y, 1);
         CGFloat a1 = b0 * CGAL::cross_product(b3, b2);
         CGFloat a2 = b1 * CGAL::cross_product(b0, b3);

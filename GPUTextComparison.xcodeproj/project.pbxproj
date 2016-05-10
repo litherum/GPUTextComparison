@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C217F3541CE1A0280077B0A3 /* CubicBeziers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C217F3521CE1A0280077B0A3 /* CubicBeziers.cpp */; };
+		C217F3561CE1A3260077B0A3 /* README in Resources */ = {isa = PBXBuildFile; fileRef = C217F3551CE1A3260077B0A3 /* README */; };
 		C2749D5D1CC88A4300C294BE /* GlyphAtlas.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */; };
 		C2749D5F1CD5B46F00C294BE /* NaiveStencilViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = C2749D5E1CD5B46F00C294BE /* NaiveStencilViewController.swift */; };
 		C2749D631CD5BFB700C294BE /* CGPathIterator.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C2749D611CD5BFB700C294BE /* CGPathIterator.cpp */; };
@@ -25,6 +27,9 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		C217F3521CE1A0280077B0A3 /* CubicBeziers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CubicBeziers.cpp; sourceTree = "<group>"; };
+		C217F3531CE1A0280077B0A3 /* CubicBeziers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CubicBeziers.h; sourceTree = "<group>"; };
+		C217F3551CE1A3260077B0A3 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		C2749D5C1CC88A4300C294BE /* GlyphAtlas.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GlyphAtlas.swift; sourceTree = "<group>"; };
 		C2749D5E1CD5B46F00C294BE /* NaiveStencilViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = NaiveStencilViewController.swift; sourceTree = "<group>"; };
 		C2749D601CD5BFB700C294BE /* GPUTextComparison-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "GPUTextComparison-Bridging-Header.h"; sourceTree = "<group>"; };
@@ -98,6 +103,9 @@
 				C2749D621CD5BFB700C294BE /* CGPathIterator.h */,
 				C2749D601CD5BFB700C294BE /* GPUTextComparison-Bridging-Header.h */,
 				C2D33A601CE00CD9006387DE /* RetainPtr.h */,
+				C217F3521CE1A0280077B0A3 /* CubicBeziers.cpp */,
+				C217F3531CE1A0280077B0A3 /* CubicBeziers.h */,
+				C217F3551CE1A3260077B0A3 /* README */,
 			);
 			path = GPUTextComparison;
 			sourceTree = "<group>";
@@ -160,6 +168,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C217F3561CE1A3260077B0A3 /* README in Resources */,
 				C2A579FD1CBB42DB00BC11A1 /* Assets.xcassets in Resources */,
 				C2A57A0E1CBB69AE00BC11A1 /* shakespeare.txt in Resources */,
 				C2A57A001CBB42DB00BC11A1 /* MainMenu.xib in Resources */,
@@ -177,6 +186,7 @@
 				C2D33A5F1CE005A1006387DE /* Triangulator.cpp in Sources */,
 				C2EA43561CDEB702007D8190 /* LoopBlinnViewController.swift in Sources */,
 				C2A57A291CC2C8AA00BC11A1 /* DisplayViewController.swift in Sources */,
+				C217F3541CE1A0280077B0A3 /* CubicBeziers.cpp in Sources */,
 				C2A57A271CBB817100BC11A1 /* DisplayShaders.metal in Sources */,
 				C2749D5D1CC88A4300C294BE /* GlyphAtlas.swift in Sources */,
 				C2A57A2B1CC2E60500BC11A1 /* Layout.swift in Sources */,

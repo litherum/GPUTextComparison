@@ -168,6 +168,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
         coefficientBufferUtilization = 0
     }
+    var t = 0
 
     func drawInMTKView(view: MTKView) {
         if frames.count == 0 {
@@ -196,7 +197,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         var coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
         var coefficientBufferUtilization = 0
         
-        for glyph in frame {
+        /*for glyph in frame {
             // FIXME: Gracefully handle full geometry buffers
 
             let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font)
@@ -236,7 +237,62 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
             }
 
             appendVertices(glyph, positions: positions, coefficients: coefficients, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization)
-        }
+        }*/
+
+        t = t + 1
+        let p0 = CGPointMake(100, 300 + 200 * sin(CGFloat(t) / 10.0))
+        let p1 = CGPointMake(300, 300)
+        let p2 = CGPointMake(500, 300)
+        let p3 = CGPointMake(700, 100)
+        let asdf = cubic(p0, p1, p2, p3)
+        
+        let pVertexData = vertexBuffer.contents()
+        let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+
+        vVertexData[0] = Float(p0.x)
+        vVertexData[1] = Float(p0.y)
+        vVertexData[2] = Float(p1.x)
+        vVertexData[3] = Float(p1.y)
+        vVertexData[4] = Float(p2.x)
+        vVertexData[5] = Float(p2.y)
+        vVertexData[6] = Float(p2.x)
+        vVertexData[7] = Float(p2.y)
+        vVertexData[8] = Float(p3.x)
+        vVertexData[9] = Float(p3.y)
+        vVertexData[10] = Float(p0.x)
+        vVertexData[11] = Float(p0.y)
+
+        vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 12
+        
+        let pCoefficientData = coefficientBuffer.contents()
+        let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
+
+        vCoefficientData[0] = asdf.c0.x
+        vCoefficientData[1] = asdf.c0.y
+        vCoefficientData[2] = asdf.c0.z
+        vCoefficientData[3] = 0
+        vCoefficientData[4] = asdf.c1.x
+        vCoefficientData[5] = asdf.c1.y
+        vCoefficientData[6] = asdf.c1.z
+        vCoefficientData[7] = 0
+        vCoefficientData[8] = asdf.c2.x
+        vCoefficientData[9] = asdf.c2.y
+        vCoefficientData[10] = asdf.c2.z
+        vCoefficientData[11] = 0
+        vCoefficientData[12] = asdf.c2.x
+        vCoefficientData[13] = asdf.c2.y
+        vCoefficientData[14] = asdf.c2.z
+        vCoefficientData[15] = 0
+        vCoefficientData[16] = asdf.c3.x
+        vCoefficientData[17] = asdf.c3.y
+        vCoefficientData[18] = asdf.c3.z
+        vCoefficientData[19] = 0
+        vCoefficientData[20] = asdf.c0.x
+        vCoefficientData[21] = asdf.c0.y
+        vCoefficientData[22] = asdf.c0.z
+        vCoefficientData[23] = 0
+
+        vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 24
         
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
         
