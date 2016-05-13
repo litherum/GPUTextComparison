@@ -16,16 +16,13 @@
 extern "C" {
 #endif
 
-typedef struct CubicCoefficients {
-    vector_float3 c0;
-    vector_float3 c1;
-    vector_float3 c2;
-    vector_float3 c3;
-    bool include1;
-    bool include2;
-} CubicCoefficients;
+typedef struct CubicVertex {
+    CGPoint point;
+    vector_float3 coefficient;
+} CubicVertex;
 
-CubicCoefficients cubic(CGPoint, CGPoint, CGPoint, CGPoint);
+typedef void (^CubicFaceReceiver)(CubicVertex, CubicVertex, CubicVertex);
+void cubic(CGPoint, CGPoint, CGPoint, CGPoint, CubicFaceReceiver);
 
 #ifdef __cplusplus
 }

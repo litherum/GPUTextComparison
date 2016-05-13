@@ -30,7 +30,7 @@ vertex LoopBlinnVertexInOut loopBlinnVertex(LoopBlinnVertexIn vertexIn [[ stage_
     return outVertex;
 };
 
-fragment half4 loopBlinnFragment(LoopBlinnVertexInOut inFrag [[ stage_in ]])
+fragment float4 loopBlinnFragment(LoopBlinnVertexInOut inFrag [[ stage_in ]])
 {
     /*float offsetU = inFrag.coefficient.x;
     float offsetV = inFrag.coefficient.y;
@@ -51,5 +51,5 @@ fragment half4 loopBlinnFragment(LoopBlinnVertexInOut inFrag [[ stage_in ]])
 
     float result = k * k * k - l * m;
     float dist = result <= 0;
-    return half4(dist, dist, dist, 1);
+    return float4(dist, dist, dist, 1);
 };

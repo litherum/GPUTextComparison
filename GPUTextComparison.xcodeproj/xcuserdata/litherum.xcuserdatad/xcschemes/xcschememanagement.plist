@@ -14,9 +14,19 @@
 			<key>orderHint</key>
 			<integer>1</integer>
 		</dict>
+		<key>LoopBlinnTester.xcscheme</key>
+		<dict>
+			<key>orderHint</key>
+			<integer>1</integer>
+		</dict>
 	</dict>
 	<key>SuppressBuildableAutocreation</key>
 	<dict>
+		<key>C22667311CE553A600F19235</key>
+		<dict>
+			<key>primary</key>
+			<true/>
+		</dict>
 		<key>C2A579F61CBB42DB00BC11A1</key>
 		<dict>
 			<key>primary</key>

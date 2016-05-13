@@ -1,3 +1,4 @@
 Input path must:
 - Not self-intersect
 - "Inside" is always on the right as you walk in the direction of the path
+- Convex hulls of each curve do not intersect

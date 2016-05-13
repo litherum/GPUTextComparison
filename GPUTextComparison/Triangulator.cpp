@@ -44,8 +44,8 @@ private:
 typedef CGAL::Exact_predicates_inexact_constructions_kernel      K;
 typedef CGAL::Triangulation_vertex_base_2<K>                     Vb;
 typedef CGAL::Triangulation_face_base_with_info_2<FaceInfo, K>  Fbb;
-typedef CGAL::Constrained_triangulation_face_base_2<K,Fbb>       Fb;
-typedef CGAL::Triangulation_data_structure_2<Vb,Fb>              TDS;
+typedef CGAL::Constrained_triangulation_face_base_2<K, Fbb>      Fb;
+typedef CGAL::Triangulation_data_structure_2<Vb, Fb>             TDS;
 typedef CGAL::Exact_predicates_tag                               Itag;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K, TDS, Itag> CDT;
 
@@ -115,6 +115,8 @@ private:
         auto p2 = element.points[1];
         auto p3 = element.points[2];
         auto result = cubic(p0, p1, p2, p3);
+        if (result.swapMiddleVertices)
+            std::swap(p1, p2);
         CDT::Vertex_handle newVertex;
         if (result.include1) {
             newVertex = cdt.insert(CDT::Point(p1.x, p1.y));

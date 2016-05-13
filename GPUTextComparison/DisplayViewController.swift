@@ -168,7 +168,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             Float(positionRect.maxX), Float(positionRect.origin.y),
             Float(positionRect.origin.x), Float(positionRect.origin.y),
         ]
-        
+
         vVertexData.initializeFrom(newVertices)
         vertexBufferUtilization = vertexBufferUtilization + sizeofValue(newVertices[0]) * 2 * 3 * 2
         
