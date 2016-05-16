@@ -153,7 +153,7 @@ static inline Coefficients loopCoefficients(CGFloat d1, CGFloat ls, CGFloat lt, 
     return result;
 }
 
-static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
+static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver receiver) {
     CGFloat ls, lt, ms, mt;
     std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
 
@@ -163,7 +163,7 @@ static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint 
     bool c1 = t1 > 0 && t1 < 1;
     if (c0 || c1) {
         // We need to subdivide.
-        // This is a layering violation, but I think it's better than recursion.
+        // This is a huge layering violation, but I think it's better than recursion. Maybe we should pass a signal up instead?
         auto t = c0 ? t0 : t1;
         auto subdivided = subdivide(t, p0, p1, p2, p3);
         std::tie(d1, d2, d3) = computeDs(subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3]);
@@ -173,7 +173,11 @@ static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint 
         std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
         auto coefficients2 = loopCoefficients(d1, ls, lt, ms, mt);
 
-        return { { subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3], coefficients1 }, { subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3], coefficients2 } };
+        // I don't actually know if this is right. Maybe we can't just fill in the subdivision gap like this.
+        receiver({ p0, { 0, 1, 1 } }, { subdivided[0][3], { 0, 1, 1 } }, { p3, { 0, 1, 1 } });
+
+        return { { subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3], coefficients1 },
+            { subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3], coefficients2 } };
     }
 
     return { { p0, p1, p2, p3, loopCoefficients(d1, ls, lt, ms, mt) } };
@@ -187,7 +191,7 @@ static Coefficients cusp(CGFloat d1, CGFloat d2, CGFloat d3) {
         { ls - lt / 3, ls * ls * (ls - lt), 1 },
         { ls - 2 * lt / 3, (ls - lt) * (ls - lt) * ls, 1 },
         { ls - lt, (ls - lt) * (ls - lt) * (ls - lt), 1 },
-        true
+        false
     };
 }
 
@@ -248,7 +252,7 @@ void cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver rec
     else if (discr > 0)
         result = serpentine(d1, d2, d3);
     else if (discr < 0) {
-        for (auto subdivision : loop(d1, d2, d3, p0, p1, p2, p3)) {
+        for (auto subdivision : loop(d1, d2, d3, p0, p1, p2, p3, receiver)) {
             flipCoefficients(subdivision.c);
             for (auto triangle : triangulate(subdivision))
                 receiver(triangle[0], triangle[1], triangle[2]);
