@@ -9,7 +9,6 @@
 #include "CubicBeziers.h"
 #include <array>
 
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wconditional-uninitialized"
 #pragma clang diagnostic ignored "-Wshift-negative-value"
@@ -164,6 +163,7 @@ static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint 
     bool c1 = t1 > 0 && t1 < 1;
     if (c0 || c1) {
         // We need to subdivide.
+        // This is a layering violation, but I think it's better than recursion.
         auto t = c0 ? t0 : t1;
         auto subdivided = subdivide(t, p0, p1, p2, p3);
         std::tie(d1, d2, d3) = computeDs(subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3]);
