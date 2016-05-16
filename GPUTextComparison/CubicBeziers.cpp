@@ -174,7 +174,7 @@ static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint 
         auto coefficients2 = loopCoefficients(d1, ls, lt, ms, mt);
 
         // I don't actually know if this is right. Maybe we can't just fill in the subdivision gap like this.
-        receiver({ p0, { 0, 1, 1 } }, { subdivided[0][3], { 0, 1, 1 } }, { p3, { 0, 1, 1 } });
+        //receiver({ p0, { 0, 1, 1 } }, { subdivided[0][3], { 0, 1, 1 } }, { p3, { 0, 1, 1 } });
 
         return { { subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3], coefficients1 },
             { subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3], coefficients2 } };
