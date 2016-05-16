@@ -19,28 +19,31 @@
 #include <CGAL/Delaunay_triangulation_2.h>
 #pragma clang diagnostic pop
 
-struct VertexInfo {
+struct CoefficientTriple {
     CGFloat k;
     CGFloat l;
     CGFloat m;
 };
 
 typedef CGAL::Exact_predicates_inexact_constructions_kernel K;
-typedef CGAL::Triangulation_vertex_base_with_info_2<VertexInfo, K> Vb;
+typedef CGAL::Triangulation_vertex_base_with_info_2<CoefficientTriple, K> Vb;
 typedef CGAL::Triangulation_face_base_2<K> Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb, Fb> TDS;
 typedef CGAL::Delaunay_triangulation_2<K, TDS> Triangulation;
 
 struct Coefficients {
-    std::array<CGFloat, 3> v0;
-    std::array<CGFloat, 3> v1;
-    std::array<CGFloat, 3> v2;
-    std::array<CGFloat, 3> v3;
+    CoefficientTriple c0;
+    CoefficientTriple c1;
+    CoefficientTriple c2;
+    CoefficientTriple c3;
     bool flip;
 };
 
-struct Subdivision {
-    std::array<CGPoint, 4> points;
+struct CubicCurve {
+    CGPoint p0;
+    CGPoint p1;
+    CGPoint p2;
+    CGPoint p3;
     Coefficients c;
 };
 
@@ -147,11 +150,11 @@ static inline Coefficients loopCoefficients(CGFloat d1, CGFloat ls, CGFloat lt, 
         { (lt - ls) * (mt - ms), -(lt - ls) * (lt - ls) * (mt - ms), -(lt - ls) * (mt - ms) * (mt - ms) },
         false
     };
-    result.flip = (d1 > 0 && sign(result.v1[0]) < 0) || (d1 < 0 && sign(result.v1[0]) > 0);
+    result.flip = (d1 > 0 && sign(result.c1.k) < 0) || (d1 < 0 && sign(result.c1.k) > 0);
     return result;
 }
 
-static std::vector<Subdivision> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
+static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
     CGFloat ls, lt, ms, mt;
     std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
 
@@ -170,12 +173,10 @@ static std::vector<Subdivision> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint
         std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
         auto coefficients2 = loopCoefficients(d1, ls, lt, ms, mt);
 
-        Subdivision a = { subdivided[0], coefficients1 };
-        Subdivision b = { subdivided[1], coefficients2 };
-        return { a, b };
+        return { { subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3], coefficients1 }, { subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3], coefficients2 } };
     }
 
-    return { { { p0, p1, p2, p3 }, loopCoefficients(d1, ls, lt, ms, mt) } };
+    return { { p0, p1, p2, p3, loopCoefficients(d1, ls, lt, ms, mt) } };
 }
 
 static Coefficients cusp(CGFloat d1, CGFloat d2, CGFloat d3) {
@@ -197,18 +198,18 @@ static inline CubicVertex convertTriangulatedVertex(Triangulation::Vertex& v) {
         { static_cast<float>(info.k), static_cast<float>(info.l), static_cast<float>(info.m) } };
 }
 
-static inline std::vector<std::array<CubicVertex, 3>> triangulate(Subdivision s) {
+static inline std::vector<std::array<CubicVertex, 3>> triangulate(CubicCurve s) {
     assert(!s.c.flip);
 
     Triangulation t;
-    auto v0 = t.insert(Triangulation::Point(s.points[0].x, s.points[0].y));
-    v0->info() = { s.c.v0[0], s.c.v0[1], s.c.v0[2] };
-    auto v1 = t.insert(Triangulation::Point(s.points[1].x, s.points[1].y));
-    v1->info() = { s.c.v1[0], s.c.v1[1], s.c.v1[2] };
-    auto v2 = t.insert(Triangulation::Point(s.points[2].x, s.points[2].y));
-    v2->info() = { s.c.v2[0], s.c.v2[1], s.c.v2[2] };
-    auto v3 = t.insert(Triangulation::Point(s.points[3].x, s.points[3].y));
-    v3->info() = { s.c.v3[0], s.c.v3[1], s.c.v3[2] };
+    auto v0 = t.insert(Triangulation::Point(s.p0.x, s.p0.y));
+    v0->info() = { s.c.c0.k, s.c.c0.l, s.c.c0.m };
+    auto v1 = t.insert(Triangulation::Point(s.p1.x, s.p1.y));
+    v1->info() = { s.c.c1.k, s.c.c1.l, s.c.c1.m };
+    auto v2 = t.insert(Triangulation::Point(s.p2.x, s.p2.y));
+    v2->info() = { s.c.c2.k, s.c.c2.l, s.c.c2.m };
+    auto v3 = t.insert(Triangulation::Point(s.p3.x, s.p3.y));
+    v3->info() = { s.c.c3.k, s.c.c3.l, s.c.c3.m };
 
     std::vector<std::array<CubicVertex, 3>> result;
     for (auto i = t.finite_faces_begin(); i != t.finite_faces_end(); ++i)
@@ -216,18 +217,18 @@ static inline std::vector<std::array<CubicVertex, 3>> triangulate(Subdivision s)
     return result;
 }
 
-static void flipCoefficients(Coefficients& coefficients) {
+static inline void flipCoefficients(Coefficients& coefficients) {
     if (!coefficients.flip)
         return;
 
-    coefficients.v0[0] *= -1;
-    coefficients.v0[1] *= -1;
-    coefficients.v1[0] *= -1;
-    coefficients.v1[1] *= -1;
-    coefficients.v2[0] *= -1;
-    coefficients.v2[1] *= -1;
-    coefficients.v3[0] *= -1;
-    coefficients.v3[1] *= -1;
+    coefficients.c0.k *= -1;
+    coefficients.c0.l *= -1;
+    coefficients.c1.k *= -1;
+    coefficients.c1.l *= -1;
+    coefficients.c2.k *= -1;
+    coefficients.c2.l *= -1;
+    coefficients.c3.k *= -1;
+    coefficients.c3.l *= -1;
     coefficients.flip = false;
 }
 
@@ -258,7 +259,7 @@ void cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver rec
 
     flipCoefficients(result);
 
-    for (auto triangle : triangulate({ { p0, p1, p2, p3 }, result }))
+    for (auto triangle : triangulate({ p0, p1, p2, p3, result }))
         receiver(triangle[0], triangle[1], triangle[2]);
 
     //CGAL::orientation(CGAL::Point_2<K>(p0.x, p0.y), CGAL::Point_2<K>(p3.x, p3.y), CGAL::Point_2<K>(p1.x, p1.y)) == CGAL::RIGHT_TURN,
