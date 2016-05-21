@@ -56,103 +56,49 @@ public:
         mark();
     }
 
-    void triangulate(TriangleReceiver receiver) {
+    void triangulate(CubicTriangleFaceReceiver receiver) {
         for (auto facesIterator = cdt.finite_faces_begin(); facesIterator != cdt.finite_faces_end(); ++facesIterator) {
             if (facesIterator->info().inside()) {
                 auto p0 = facesIterator->vertex(0)->point();
                 auto p1 = facesIterator->vertex(1)->point();
                 auto p2 = facesIterator->vertex(2)->point();
-                receiver({ CGPointMake(p0.x(), p0.y()), { 0, 0 } },
-                         { CGPointMake(p1.x(), p1.y()), { 0, 0 } },
-                         { CGPointMake(p2.x(), p2.y()), { 0, 0 } });
+                receiver({ CGPointMake(p0.x(), p0.y()), { 0, 1, 1 } },
+                         { CGPointMake(p1.x(), p1.y()), { 0, 1, 1 } },
+                         { CGPointMake(p2.x(), p2.y()), { 0, 1, 1 } });
             }
         }
-        
-        for (auto& quadraticCurve : quadraticCurves)
-            receiver(quadraticCurve[0], quadraticCurve[1], quadraticCurve[2]);
-        
-        for (auto& cubicCurve : cubicCurves) {
+
+        for (auto& cubicCurve : cubicFaces)
             receiver(cubicCurve[0], cubicCurve[1], cubicCurve[2]);
-        }
     }
 
 private:
-    void insertQuadraticCurve(CDT::Vertex_handle& currentVertex, const CGPathElement& element) {
+    void insertCubicCurve(CDT::Vertex_handle& currentVertex, CGPoint p1, CGPoint p2, CGPoint p3) {
         auto p0 = CGPointMake(currentVertex->point().x(), currentVertex->point().y());
-        auto p1 = element.points[0];
-        auto p2 = element.points[1];
-        Vertex a = { p0, { 1, 1, 0 } };
-        Vertex b = { p1, { 1.5, 1, 0 } };
-        Vertex c = { p2, { 2, 2, 0 } };
-        auto newVertex = cdt.insert(CDT::Point(p2.x, p2.y));
-        switch (CGAL::orientation(CDT::Point(p0.x, p0.y), CDT::Point(p2.x, p2.y), CDT::Point(p1.x, p1.y))) {
-        case CGAL::LEFT_TURN: {
-            insertConstraint(currentVertex, newVertex);
-            quadraticCurves.push_back({ a, b, c });
-            break;
-        }
-        case CGAL::RIGHT_TURN: {
-            auto middleVertex = cdt.insert(CDT::Point(p1.x, p1.y));
-            insertConstraint(currentVertex, middleVertex);
-            insertConstraint(currentVertex, newVertex);
-            a.coefficient *= -1;
-            b.coefficient *= -1;
-            c.coefficient *= -1;
-            quadraticCurves.push_back({ a, b, c });
-            break;
-        }
-        case CGAL::COLLINEAR: {
-            insertConstraint(currentVertex, newVertex);
-            break;
-        }
-        }
-        currentVertex = newVertex;
-    }
+        __block std::vector<boost::optional<CubicVertex>> insideBorder(8);
+        __block std::vector<std::array<CubicTriangleVertex, 3>> localCubicFaces;
+        cubic(p0, p1, p2, p3, ^(CubicVertex v0, CubicVertex v1, CubicVertex v2) {
+            if (v0.order >= 0)
+                insideBorder[v0.order] = v0;
+            if (v1.order >= 0)
+                insideBorder[v1.order] = v1;
+            if (v2.order >= 0)
+                insideBorder[v2.order] = v2;
+            localCubicFaces.push_back({{ { v0.point, v0.coefficient }, { v1.point, v1.coefficient }, { v2.point, v2.coefficient } }});
+        });
 
-    void insertCubicCurve(CDT::Vertex_handle& currentVertex, const CGPathElement& element) {
-        auto p0 = CGPointMake(currentVertex->point().x(), currentVertex->point().y());
-        auto p1 = element.points[0];
-        auto p2 = element.points[1];
-        auto p3 = element.points[2];
-        auto result = cubic(p0, p1, p2, p3);
-        if (result.swapMiddleVertices)
-            std::swap(p1, p2);
+        for (auto v : localCubicFaces)
+            cubicFaces.push_back(v);
+
+        assert(insideBorder[0]);
         CDT::Vertex_handle newVertex;
-        if (result.include1) {
-            newVertex = cdt.insert(CDT::Point(p1.x, p1.y));
+        for (size_t i = 1; i < insideBorder.size(); ++i) {
+            if (!insideBorder[i])
+                break;
+            newVertex = cdt.insert(CDT::Point(insideBorder[i].value().point.x, insideBorder[i].value().point.y));
             insertConstraint(currentVertex, newVertex);
             currentVertex = newVertex;
         }
-        if (result.include2) {
-            newVertex = cdt.insert(CDT::Point(p2.x, p2.y));
-            insertConstraint(currentVertex, newVertex);
-            currentVertex = newVertex;
-        }
-        newVertex = cdt.insert(CDT::Point(p3.x, p3.y));
-        insertConstraint(currentVertex, newVertex);
-        currentVertex = newVertex;
-
-        std::array<unsigned, 6> indices;
-        if (result.include1 && result.include2) {
-            indices = { 0, 3, 2, 2, 1, 0 };
-        } else if (result.include1 && !result.include2) {
-            indices = { 0, 2, 1, 2, 3, 1 };
-        } else if (!result.include1 && result.include2) {
-            indices = { 0, 1, 2, 1, 3, 2 };
-        } else {
-            indices = { 0, 1, 2, 2, 3, 0 };
-        }
-
-        std::array<CGPoint, 4> points = { p0, p1, p2, p3 };
-        std::array<simd::float3, 4> coefficeints = { result.c0, result.c1, result.c2, result.c3 };
-        cubicCurves.push_back({{
-            { points[indices[0]], coefficeints[indices[0]] },
-            { points[indices[1]], coefficeints[indices[1]] },
-            { points[indices[2]], coefficeints[indices[2]] }}});
-        cubicCurves.push_back({{
-            { points[indices[3]], coefficeints[indices[3]] },
-            { points[indices[4]], coefficeints[indices[4]] },
-            { points[indices[5]], coefficeints[indices[5]] }}});
     }
 
     void insert() {
@@ -171,11 +117,16 @@ private:
                 break;
             }
             case kCGPathElementAddQuadCurveToPoint: {
-                insertQuadraticCurve(currentVertex, element);
+                auto source = currentVertex->point();
+                auto control = element.points[0];
+                auto destination = element.points[1];
+                auto cp1 = CGPointMake(source.x() + 2 * (control.x - source.x()) / 3, source.y() + 2 * (control.y - source.y()) / 3);
+                auto cp2 = CGPointMake(destination.x + 2 * (control.x - destination.x) / 3, destination.y + 2 * (control.y - destination.y) / 3);
+                insertCubicCurve(currentVertex, cp1, cp2, destination);
                 break;
             }
             case kCGPathElementAddCurveToPoint: {
-                insertCubicCurve(currentVertex, element);
+                insertCubicCurve(currentVertex, element.points[0], element.points[1], element.points[2]);
                 break;
             }
             case kCGPathElementCloseSubpath:
@@ -228,11 +179,10 @@ private:
     }
 
     CDT cdt;
-    std::vector<std::array<Vertex, 3>> quadraticCurves;
-    std::vector<std::array<Vertex, 3>> cubicCurves;
+    std::vector<std::array<CubicTriangleVertex, 3>> cubicFaces;
     RetainPtr<CGPathRef> path;
 };
 
-void triangulate(CGPathRef path, TriangleReceiver triangleReceiver) {
-    Triangulator(path).triangulate(triangleReceiver);
+void triangulate(CGPathRef path, CubicTriangleFaceReceiver receiver) {
+    Triangulator(path).triangulate(receiver);
 }

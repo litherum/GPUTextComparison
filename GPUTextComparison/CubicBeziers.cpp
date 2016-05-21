@@ -199,7 +199,37 @@ static inline CubicVertex convertTriangulatedVertex(Triangulation::Vertex& v) {
     auto& point = v.point();
     auto& info = v.info();
     return { CGPointMake(point.x(), point.y()),
-        { static_cast<float>(info.k), static_cast<float>(info.l), static_cast<float>(info.m) } };
+        { static_cast<float>(info.k), static_cast<float>(info.l), static_cast<float>(info.m) },
+        -1 };
+}
+
+// FIXME: This might not work if some points are duplicated.
+static inline Triangulation::Vertex_handle toInside(Triangulation::Vertex_handle initial, Triangulation::Vertex_handle v1, Triangulation::Vertex_handle v2, Triangulation::Vertex_handle v3) {
+    auto circulatorBase = initial->incident_edges();
+    auto circulator = circulatorBase;
+    do {
+        auto neighbor = circulator->first->vertex((circulator->second + 1) % 3);
+        assert(neighbor != initial);
+        auto k = neighbor->info().k;
+        auto l = neighbor->info().l;
+        auto m = neighbor->info().m;
+        if (k * k * k - l * m > 0) {
+            ++circulator;
+            continue;
+        }
+        if (neighbor == v1 || neighbor == v2)
+            return neighbor;
+        ++circulator;
+    } while (circulator != circulatorBase);
+    return v3;
+}
+
+static inline int index(std::vector<Triangulation::Vertex_handle>& order, Triangulation::Vertex_handle test) {
+    for (int i = 0; i < order.size(); ++i) {
+        if (order[i] == test)
+            return i;
+    }
+    return -1;
 }
 
 static inline std::vector<std::array<CubicVertex, 3>> triangulate(CubicCurve s) {
@@ -215,9 +245,26 @@ static inline std::vector<std::array<CubicVertex, 3>> triangulate(CubicCurve s) 
     auto v3 = t.insert(Triangulation::Point(s.p3.x, s.p3.y));
     v3->info() = { s.c.c3.k, s.c.c3.l, s.c.c3.m };
 
+    std::vector<Triangulation::Vertex_handle> insideBorder = { v0 };
+    auto nextInside = toInside(v0, v1, v2, v3);
+    insideBorder.push_back(nextInside);
+    if (nextInside != v3) {
+        nextInside = toInside(nextInside, v1, v2, v3);
+        insideBorder.push_back(nextInside);
+        if (nextInside != v3)
+            insideBorder.push_back(v3);
+    }
+
     std::vector<std::array<CubicVertex, 3>> result;
-    for (auto i = t.finite_faces_begin(); i != t.finite_faces_end(); ++i)
-        result.push_back({ convertTriangulatedVertex(*i->vertex(0)), convertTriangulatedVertex(*i->vertex(1)), convertTriangulatedVertex(*i->vertex(2)) });
+    for (auto i = t.finite_faces_begin(); i != t.finite_faces_end(); ++i) {
+        auto resultV0 = convertTriangulatedVertex(*i->vertex(0));
+        auto resultV1 = convertTriangulatedVertex(*i->vertex(1));
+        auto resultV2 = convertTriangulatedVertex(*i->vertex(2));
+        resultV0.order = index(insideBorder, v0);
+        resultV1.order = index(insideBorder, v1);
+        resultV2.order = index(insideBorder, v2);
+        result.push_back({ resultV0, resultV1, resultV2 });
+    }
     return result;
 }
 
@@ -252,10 +299,20 @@ void cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver rec
     else if (discr > 0)
         result = serpentine(d1, d2, d3);
     else if (discr < 0) {
+        auto maxIndex = 0;
         for (auto subdivision : loop(d1, d2, d3, p0, p1, p2, p3, receiver)) {
             flipCoefficients(subdivision.c);
-            for (auto triangle : triangulate(subdivision))
+            auto localMaxIndex = 0;
+            for (auto triangle : triangulate(subdivision)) {
+                localMaxIndex = std::max(localMaxIndex, triangle[0].order);
+                localMaxIndex = std::max(localMaxIndex, triangle[1].order);
+                localMaxIndex = std::max(localMaxIndex, triangle[2].order);
+                triangle[0].order += maxIndex;
+                triangle[1].order += maxIndex;
+                triangle[2].order += maxIndex;
                 receiver(triangle[0], triangle[1], triangle[2]);
+            }
+            maxIndex += localMaxIndex + 1;
         }
         return;
     } else
@@ -265,7 +322,4 @@ void cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver rec
 
     for (auto triangle : triangulate({ p0, p1, p2, p3, result }))
         receiver(triangle[0], triangle[1], triangle[2]);
-
-    //CGAL::orientation(CGAL::Point_2<K>(p0.x, p0.y), CGAL::Point_2<K>(p3.x, p3.y), CGAL::Point_2<K>(p1.x, p1.y)) == CGAL::RIGHT_TURN,
-    //CGAL::orientation(CGAL::Point_2<K>(p0.x, p0.y), CGAL::Point_2<K>(p3.x, p3.y), CGAL::Point_2<K>(p2.x, p2.y)) == CGAL::RIGHT_TURN
 }

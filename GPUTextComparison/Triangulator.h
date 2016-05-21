@@ -12,17 +12,19 @@
 #include <CoreGraphics/CoreGraphics.h>
 #include <simd/simd.h>
 
+#include "CubicBeziers.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-struct Vertex {
-    CGPoint position;
+typedef struct CubicTriangleVertex {
+    CGPoint point;
     vector_float3 coefficient;
-};
+} CubicTriangleVertex;
 
-typedef void (^TriangleReceiver)(struct Vertex, struct Vertex, struct Vertex);
-void triangulate(CGPathRef, TriangleReceiver);
+typedef void (^CubicTriangleFaceReceiver)(CubicTriangleVertex, CubicTriangleVertex, CubicTriangleVertex);
+void triangulate(CGPathRef, CubicTriangleFaceReceiver);
 
 #ifdef __cplusplus
 }

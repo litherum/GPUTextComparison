@@ -19,6 +19,7 @@ extern "C" {
 typedef struct CubicVertex {
     CGPoint point;
     vector_float3 coefficient;
+    int order;
 } CubicVertex;
 
 typedef void (^CubicFaceReceiver)(CubicVertex, CubicVertex, CubicVertex);
