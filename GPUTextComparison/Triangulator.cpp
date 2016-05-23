@@ -78,6 +78,10 @@ private:
         __block std::vector<boost::optional<CubicVertex>> insideBorder(8);
         __block std::vector<std::array<CubicTriangleVertex, 3>> localCubicFaces;
         cubic(p0, p1, p2, p3, ^(CubicVertex v0, CubicVertex v1, CubicVertex v2) {
+            std::cout << "Triangle" << std::endl;
+            std::cout << "Vertex 1: (" << v0.point.x << ", " << v0.point.y << ") (" << v0.coefficient.x << ", " << v0.coefficient.y << ", " << v0.coefficient.z << ") Order: " << v0.order << std::endl;
+            std::cout << "Vertex 2: (" << v1.point.x << ", " << v1.point.y << ") (" << v1.coefficient.x << ", " << v1.coefficient.y << ", " << v1.coefficient.z << ") Order: " << v1.order << std::endl;
+            std::cout << "Vertex 3: (" << v2.point.x << ", " << v2.point.y << ") (" << v2.coefficient.x << ", " << v2.coefficient.y << ", " << v2.coefficient.z << ") Order: " << v2.order << std::endl;
             if (v0.order >= 0)
                 insideBorder[v0.order] = v0;
             if (v1.order >= 0)
@@ -104,19 +108,23 @@ private:
     void insert() {
         CDT::Vertex_handle currentVertex;
         CDT::Vertex_handle subpathBegin;
+        std::cout << "Starting path" << std::endl;
         iterateCGPath(path, [&](CGPathElement element) {
             switch (element.type) {
             case kCGPathElementMoveToPoint:
+                std::cout << "Moving to (" << element.points[0].x << ", " << element.points[0].y << ")" << std::endl;
                 currentVertex = cdt.insert(CDT::Point(element.points[0].x, element.points[0].y));
                 subpathBegin = currentVertex;
                 break;
             case kCGPathElementAddLineToPoint: {
+                std::cout << "Adding line to (" << element.points[0].x << ", " << element.points[0].y << ")" << std::endl;
                 auto newVertex = cdt.insert(CDT::Point(element.points[0].x, element.points[0].y));
                 insertConstraint(currentVertex, newVertex);
                 currentVertex = newVertex;
                 break;
             }
             case kCGPathElementAddQuadCurveToPoint: {
+                std::cout << "Adding quadratic curve control point (" << element.points[0].x << ", " << element.points[0].y << ") destination (" << element.points[1].x << ", " << element.points[1].y << ")" << std::endl;
                 auto source = currentVertex->point();
                 auto control = element.points[0];
                 auto destination = element.points[1];
@@ -126,14 +134,17 @@ private:
                 break;
             }
             case kCGPathElementAddCurveToPoint: {
+                std::cout << "Adding curve control point 1 (" << element.points[0].x << ", " << element.points[0].y << ") control points 2 (" << element.points[1].x << ", " << element.points[1].y << ") destination (" << element.points[2].x << ", " << element.points[2].y << ")" << std::endl;
                 insertCubicCurve(currentVertex, element.points[0], element.points[1], element.points[2]);
                 break;
             }
             case kCGPathElementCloseSubpath:
+                std::cout << "Closing subpath" << std::endl;
                 insertConstraint(currentVertex, subpathBegin);
                 currentVertex = subpathBegin;
             }
         });
+        std::cout << "Ending path" << std::endl;
     }
 
     std::list<CDT::Edge> flood(CDT::Face_handle seed, unsigned depth) {

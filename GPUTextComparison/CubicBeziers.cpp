@@ -76,7 +76,7 @@ static Coefficients serpentine(CGFloat d1, CGFloat d2, CGFloat d3) {
         { (3 * ls * ms - ls * mt - lt * ms) / 3, ls * ls * (ls - lt), ms * ms * (ms - mt) },
         { (lt * (mt - 2 * ms) + ls * (3 * ms - 2 * mt)) / 3, (lt - ls) * (lt - ls) * ls, (mt - ms) * (mt - ms) * ms },
         { (lt - ls) * (mt - ms), -(lt - ls) * (lt - ls) * (lt - ls), -(mt - ms) * (mt - ms) * (mt - ms) },
-        d1 < 0
+        d1 > 0
     };
 }
 
@@ -149,7 +149,7 @@ static inline Coefficients loopCoefficients(CGFloat d1, CGFloat ls, CGFloat lt, 
         { (lt - ls) * (mt - ms), -(lt - ls) * (lt - ls) * (mt - ms), -(lt - ls) * (mt - ms) * (mt - ms) },
         false
     };
-    result.flip = (d1 > 0 && sign(result.c1.k) < 0) || (d1 < 0 && sign(result.c1.k) > 0);
+    result.flip = (d1 > 0 && sign(result.c1.k) > 0) || (d1 < 0 && sign(result.c1.k) < 0);
     return result;
 }
 
@@ -260,9 +260,9 @@ static inline std::vector<std::array<CubicVertex, 3>> triangulate(CubicCurve s) 
         auto resultV0 = convertTriangulatedVertex(*i->vertex(0));
         auto resultV1 = convertTriangulatedVertex(*i->vertex(1));
         auto resultV2 = convertTriangulatedVertex(*i->vertex(2));
-        resultV0.order = index(insideBorder, v0);
-        resultV1.order = index(insideBorder, v1);
-        resultV2.order = index(insideBorder, v2);
+        resultV0.order = index(insideBorder, i->vertex(0));
+        resultV1.order = index(insideBorder, i->vertex(1));
+        resultV2.order = index(insideBorder, i->vertex(2));
         result.push_back({ resultV0, resultV1, resultV2 });
     }
     return result;
