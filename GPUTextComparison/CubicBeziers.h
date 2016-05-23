@@ -23,7 +23,7 @@ typedef struct CubicVertex {
 } CubicVertex;
 
 typedef void (^CubicFaceReceiver)(CubicVertex, CubicVertex, CubicVertex);
-void cubic(CGPoint, CGPoint, CGPoint, CGPoint, CubicFaceReceiver);
+bool cubic(CGPoint, CGPoint, CGPoint, CGPoint, CubicFaceReceiver);
 
 #ifdef __cplusplus
 }

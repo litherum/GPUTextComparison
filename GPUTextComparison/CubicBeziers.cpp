@@ -87,7 +87,7 @@ static inline CGFloat roundToZero(CGFloat x) {
     return x;
 }
 
-static inline std::array<CGFloat, 3> computeDs(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
+static inline boost::optional<std::array<CGFloat, 3>> computeDs(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
     CGAL::Vector_3<K> b0(p0.x, p0.y, 1);
     CGAL::Vector_3<K> b1(p1.x, p1.y, 1);
     CGAL::Vector_3<K> b2(p2.x, p2.y, 1);
@@ -99,6 +99,10 @@ static inline std::array<CGFloat, 3> computeDs(CGPoint p0, CGPoint p1, CGPoint p
     CGFloat d1 = a1 - 2 * a2 + 3 * a3;
     CGFloat d2 = -a2 + 3 * a3;
     CGFloat d3 = 3 * a3;
+
+    if (roundToZero(d1) == 0 && roundToZero(d2) == 0 && roundToZero(d3) == 0)
+        return boost::none_t();
+
     CGAL::Vector_3<K> u(d1, d2, d3);
     u = u / std::sqrt(u.squared_length());
     d1 = u.x();
@@ -109,7 +113,7 @@ static inline std::array<CGFloat, 3> computeDs(CGPoint p0, CGPoint p1, CGPoint p
     d2 = roundToZero(d2);
     d3 = roundToZero(d3);
 
-    return { d1, d2, d3 };
+    return { { d1, d2, d3 } };
 }
 
 static inline CGPoint subdivide(CGFloat t, CGPoint a, CGPoint b) {
@@ -166,10 +170,10 @@ static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint 
         // This is a huge layering violation, but I think it's better than recursion. Maybe we should pass a signal up instead?
         auto t = c0 ? t0 : t1;
         auto subdivided = subdivide(t, p0, p1, p2, p3);
-        std::tie(d1, d2, d3) = computeDs(subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3]);
+        std::tie(d1, d2, d3) = computeDs(subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3]).value();
         std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
         auto coefficients1 = loopCoefficients(d1, ls, lt, ms, mt);
-        std::tie(d1, d2, d3) = computeDs(subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3]);
+        std::tie(d1, d2, d3) = computeDs(subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3]).value();
         std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
         auto coefficients2 = loopCoefficients(d1, ls, lt, ms, mt);
 
@@ -206,6 +210,7 @@ static inline Triangulation::Vertex_handle toInside(Triangulation::Vertex_handle
     auto circulator = circulatorBase;
     do {
         auto neighbor = circulator->first->vertex((circulator->second + 1) % 3);
+        assert(circulator->first->vertex((circulator->second + 2) % 3) == initial);
         assert(neighbor != initial);
         auto k = neighbor->info().k;
         auto l = neighbor->info().l;
@@ -280,17 +285,20 @@ static inline void flipCoefficients(Coefficients& coefficients) {
     coefficients.flip = false;
 }
 
-void cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver receiver) {
+bool cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver receiver) {
     CGFloat d1, d2, d3;
-    std::tie(d1, d2, d3) = computeDs(p0, p1, p2, p3);
+    if (auto ds = computeDs(p0, p1, p2, p3))
+        std::tie(d1, d2, d3) = ds.value();
+    else
+        return true;
 
     Coefficients result;
     CGFloat discr = d1 * d1 * (3 * d2 * d2 - 4 * d1 * d3);
 
     if (CGPointEqualToPoint(p0, p1) && CGPointEqualToPoint(p0, p2) && CGPointEqualToPoint(p0, p3))
-        result = lineOrPoint(d1, d2, d3);
+        return true;
     else if (d1 == 0 && d2 == 0 && d3 == 0)
-        result = lineOrPoint(d1, d2, d3);
+        return true;
     else if (d1 == 0 && d2 == 0)
         result = quadratic(d1, d2, d3);
     else if (discr > 0)
@@ -311,7 +319,7 @@ void cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver rec
             }
             maxIndex += localMaxIndex + 1;
         }
-        return;
+        return false;
     } else
         result = cusp(d1, d2, d3);
 
@@ -319,4 +327,6 @@ void cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver rec
 
     for (auto triangle : triangulate({ p0, p1, p2, p3, result }))
         receiver(triangle[0], triangle[1], triangle[2]);
+
+    return false;
 }
