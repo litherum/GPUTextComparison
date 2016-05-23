@@ -31,7 +31,7 @@ func layout() -> [Frame] {
         endIndex = endIndex.successor()
     }
     string = string.substringToIndex(endIndex)*/
-    guard let font = CTFontCreateUIFontForLanguage(.System, 400, nil) else {
+    guard let font = CTFontCreateUIFontForLanguage(.System, 50, nil) else {
         fatalError()
     }
     let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string, [kCTFontAttributeName as String : font])

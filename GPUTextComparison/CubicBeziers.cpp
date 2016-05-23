@@ -62,7 +62,7 @@ static Coefficients quadratic(CGFloat d1, CGFloat d2, CGFloat d3) {
         { CGFloat(1) / 3, 0, CGFloat(1) / 3 },
         { CGFloat(2) / 3, CGFloat(1) / 3, CGFloat(2) / 3 },
         { 1, 1, 1 },
-        d3 < 0
+        d3 > 0
     };
 }
 
@@ -173,9 +173,6 @@ static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint 
         std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
         auto coefficients2 = loopCoefficients(d1, ls, lt, ms, mt);
 
-        // I don't actually know if this is right. Maybe we can't just fill in the subdivision gap like this.
-        //receiver({ p0, { 0, 1, 1 } }, { subdivided[0][3], { 0, 1, 1 } }, { p3, { 0, 1, 1 } });
-
         return { { subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3], coefficients1 },
             { subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3], coefficients2 } };
     }
@@ -191,7 +188,7 @@ static Coefficients cusp(CGFloat d1, CGFloat d2, CGFloat d3) {
         { ls - lt / 3, ls * ls * (ls - lt), 1 },
         { ls - 2 * lt / 3, (ls - lt) * (ls - lt) * ls, 1 },
         { ls - lt, (ls - lt) * (ls - lt) * (ls - lt), 1 },
-        false
+        true
     };
 }
 

@@ -143,10 +143,10 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         var coefficientBufferUtilization = 0
 
         t = t + 1
-        let p0 = CGPointMake(100, 300)
-        let p1 = CGPointMake(700, 100)
-        let p2 = CGPointMake(700, 500)
-        let p3 = CGPointMake(700, 300)
+        let p0 = CGPointMake(700, 100)
+        let p1 = CGPointMake(500, 300)
+        let p2 = CGPointMake(300, 300)
+        let p3 = CGPointMake(100, 100)
         cubic(p0, p1, p2, p3) { (v0, v1, v2) in
             let newVertices: [Float] = [
                 Float(v0.point.x), Float(v0.point.y),
