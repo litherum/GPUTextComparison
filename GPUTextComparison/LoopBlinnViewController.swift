@@ -34,7 +34,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
     var vertexBuffers: [MTLBuffer] = []
     var coefficientBuffers: [MTLBuffer] = []
 
-    let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
+    let inflightSemaphore = DispatchSemaphore(value: MaxBuffers)
     var bufferIndex = 0
 
     var frameCounter = 0
@@ -117,7 +117,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
 
     private func acquireCoefficientBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if coefficientBuffers.isEmpty {
-            let newBuffer = device.newBufferWithLength(CoefficientBufferSize, options: [])
+            let newBuffer = device.makeBuffer(length: CoefficientBufferSize, options: [])!
             usedBuffers.append(newBuffer)
             return newBuffer
         } else {
