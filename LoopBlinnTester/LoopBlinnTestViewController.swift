@@ -55,12 +55,12 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         let vertexProgram = defaultLibrary.newFunctionWithName("loopBlinnVertex")!
         
         let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
-        vertexDescriptor.layouts[1].stride = sizeof(Float) * 4
-        vertexDescriptor.attributes[0].format = .Float2
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
+        vertexDescriptor.layouts[1].stride = MemoryLayout<Float>.size * 4
+        vertexDescriptor.attributes[0].format = .float2
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .Float4
+        vertexDescriptor.attributes[1].format = .float4
         vertexDescriptor.attributes[1].offset = 0
         vertexDescriptor.attributes[1].bufferIndex = 1
         
@@ -103,18 +103,18 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
     }
     
     private func canAppendVertices(verticesCount: Int, coefficientsCount: Int, vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, coefficientBufferUtilization: Int) -> Bool {
-        if vertexBufferUtilization + sizeof(Float) * verticesCount > vertexBuffer.length {
+        if vertexBufferUtilization + MemoryLayout<Float>.size * verticesCount > vertexBuffer.length {
             return false
         }
-        if coefficientBufferUtilization + sizeof(Float) * coefficientsCount > coefficientBuffer.length {
+        if coefficientBufferUtilization + MemoryLayout<Float>.size * coefficientsCount > coefficientBuffer.length {
             return false
         }
         return true
     }
     
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int, inout usedCoefficientBuffers: [MTLBuffer], vertexCount: Int) {
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
-        renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, atIndex: 1)
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
         renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
         
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
@@ -159,7 +159,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
 
             vVertexData.initializeFrom(newVertices)
 
-            vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 6
+            vertexBufferUtilization = vertexBufferUtilization + MemoryLayout<Float>.size * 6
 
             let newCoefficients: [Float] = [
                 v0.coefficient.x, v0.coefficient.y, v0.coefficient.z, 0,
@@ -172,10 +172,10 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
 
             vCoefficientData.initializeFrom(newCoefficients)
 
-            coefficientBufferUtilization = coefficientBufferUtilization + sizeof(Float) * 12
+            coefficientBufferUtilization = coefficientBufferUtilization + MemoryLayout<Float>.size * 12
         }
 
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
         
         renderEncoder.endEncoding()
         commandBuffer.presentDrawable(currentDrawable)

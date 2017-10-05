@@ -87,12 +87,12 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         let vertexProgram = defaultLibrary.newFunctionWithName("textureVertex")!
         
         let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
-        vertexDescriptor.layouts[1].stride = sizeof(Float) * 2
-        vertexDescriptor.attributes[0].format = .Float2
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
+        vertexDescriptor.layouts[1].stride = MemoryLayout<Float>.size * 2
+        vertexDescriptor.attributes[0].format = .float2
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .Float2
+        vertexDescriptor.attributes[1].format = .float2
         vertexDescriptor.attributes[1].offset = 0
         vertexDescriptor.attributes[1].bufferIndex = 1
         
@@ -144,10 +144,10 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
     }
 
     private func canAppendQuad(vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, textureCoordinateBufferUtilization: Int) -> Bool {
-        if vertexBufferUtilization + sizeof(Float) * 2 * 3 * 2 > vertexBuffer.length {
+        if vertexBufferUtilization + MemoryLayout<Float>.size * 2 * 3 * 2 > vertexBuffer.length {
             return false
         }
-        if textureCoordinateBufferUtilization + sizeof(Float) * 2 * 3 * 2 > textureCoordinateBuffer.length {
+        if textureCoordinateBufferUtilization + MemoryLayout<Float>.size * 2 * 3 * 2 > textureCoordinateBuffer.length {
             return false
         }
         return true
@@ -190,9 +190,9 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
     }
 
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int, inout usedTextureCoordinateBuffers: [MTLBuffer], vertexCount: Int) {
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
-        renderEncoder.setVertexBuffer(textureCoordinateBuffer, offset:0, atIndex: 1)
-        renderEncoder.setFragmentTexture(texture, atIndex: 0)
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(textureCoordinateBuffer, offset:0, index: 1)
+        renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
@@ -257,7 +257,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
             appendQuad(boundingRect.offsetBy(dx: glyph.position.x, dy: glyph.position.y), textureRect: box, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization)
         }
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.endEncoding()
         commandBuffer.presentDrawable(currentDrawable)

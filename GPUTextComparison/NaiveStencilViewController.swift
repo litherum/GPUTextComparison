@@ -82,8 +82,8 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         let vertexProgram = defaultLibrary.newFunctionWithName("stencilVertex")!
 
         let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
-        vertexDescriptor.attributes[0].format = .Float2
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
+        vertexDescriptor.attributes[0].format = .float2
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
 
@@ -148,14 +148,14 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     }
 
     private func canAppendVertices(vertices: [Float], vertexBuffer: MTLBuffer, vertexBufferUtilization: Int) -> Bool {
-        if vertexBufferUtilization + sizeof(Float) * vertices.count > vertexBuffer.length {
+        if vertexBufferUtilization + MemoryLayout<Float>.size * vertices.count > vertexBuffer.length {
             return false
         }
         return true
     }
 
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder, vertexBuffer: inout MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], vertexCount: Int) {
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
@@ -315,10 +315,10 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
             vertexBufferUtilization = vertexBufferUtilization + sizeofValue(geometry[0]) * geometry.count
         }
 
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.setDepthStencilState(fillDepthStencilState)
-        renderEncoder.setVertexBuffer(fillVertexBuffer, offset: 0, atIndex: 0)
+        renderEncoder.setVertexBuffer(fillVertexBuffer, offset: 0, index: 0)
         renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 6, instanceCount: 1)
 
         renderEncoder.endEncoding()
