@@ -148,7 +148,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
 
         let pVertexData = vertexBuffer.contents()
 
-        let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+        let vVertexData = pVertexData.assumingMemoryBound(to: Float.self).advanced(by: vertexBufferUtilization)
 
         assert(positions.count % 2 == 0)
         for i in 0 ..< positions.count / 2 {
@@ -158,7 +158,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: positions[0]) * positions.count
 
         let pCoefficientData = coefficientBuffer.contents()
-        let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
+        let vCoefficientData = pCoefficientData.assumingMemoryBound(to: Float.self).advanced(by: vertexBufferUtilization)
 
         assert(coefficients.count % 2 == 0)
         for i in 0 ..< coefficients.count {

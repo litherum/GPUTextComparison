@@ -7,6 +7,9 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		374F8E191F86ACE5005D4F65 /* libCGAL.13.0.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 374F8E171F86ACE5005D4F65 /* libCGAL.13.0.1.dylib */; };
+		374F8E1A1F86ACE5005D4F65 /* libCGAL_Core.13.0.1.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = 374F8E181F86ACE5005D4F65 /* libCGAL_Core.13.0.1.dylib */; };
+		374F8E1C1F86AD4D005D4F65 /* CGAL in Frameworks */ = {isa = PBXBuildFile; fileRef = 374F8E1B1F86AD4D005D4F65 /* CGAL */; };
 		C217F3541CE1A0280077B0A3 /* CubicBeziers.cpp in Sources */ = {isa = PBXBuildFile; fileRef = C217F3521CE1A0280077B0A3 /* CubicBeziers.cpp */; };
 		C217F3561CE1A3260077B0A3 /* README in Resources */ = {isa = PBXBuildFile; fileRef = C217F3551CE1A3260077B0A3 /* README */; };
 		C22667351CE553A600F19235 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C22667341CE553A600F19235 /* AppDelegate.swift */; };
@@ -33,6 +36,11 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		374F8E131F86A5AB005D4F65 /* CGAL */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CGAL; path = ../../../../../../../usr/local/Cellar/cgal/4.11/lib/CGAL; sourceTree = "<group>"; };
+		374F8E151F86A616005D4F65 /* libCGAL.12.0.0.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.12.0.0.dylib; path = ../azul/libs/libCGAL.12.0.0.dylib; sourceTree = "<group>"; };
+		374F8E171F86ACE5005D4F65 /* libCGAL.13.0.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL.13.0.1.dylib; path = ../../../../../../../usr/local/Cellar/cgal/4.11/lib/libCGAL.13.0.1.dylib; sourceTree = "<group>"; };
+		374F8E181F86ACE5005D4F65 /* libCGAL_Core.13.0.1.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libCGAL_Core.13.0.1.dylib; path = ../../../../../../../usr/local/Cellar/cgal/4.11/lib/libCGAL_Core.13.0.1.dylib; sourceTree = "<group>"; };
+		374F8E1B1F86AD4D005D4F65 /* CGAL */ = {isa = PBXFileReference; lastKnownFileType = folder; name = CGAL; path = ../../../../../../../usr/local/Cellar/cgal/4.11/include/CGAL; sourceTree = "<group>"; };
 		C217F3521CE1A0280077B0A3 /* CubicBeziers.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = CubicBeziers.cpp; sourceTree = "<group>"; };
 		C217F3531CE1A0280077B0A3 /* CubicBeziers.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = CubicBeziers.h; sourceTree = "<group>"; };
 		C217F3551CE1A3260077B0A3 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
@@ -78,12 +86,27 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				374F8E1C1F86AD4D005D4F65 /* CGAL in Frameworks */,
+				374F8E191F86ACE5005D4F65 /* libCGAL.13.0.1.dylib in Frameworks */,
+				374F8E1A1F86ACE5005D4F65 /* libCGAL_Core.13.0.1.dylib in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		374F8E121F86A5A9005D4F65 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				374F8E1B1F86AD4D005D4F65 /* CGAL */,
+				374F8E181F86ACE5005D4F65 /* libCGAL_Core.13.0.1.dylib */,
+				374F8E171F86ACE5005D4F65 /* libCGAL.13.0.1.dylib */,
+				374F8E151F86A616005D4F65 /* libCGAL.12.0.0.dylib */,
+				374F8E131F86A5AB005D4F65 /* CGAL */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		C22667331CE553A600F19235 /* LoopBlinnTester */ = {
 			isa = PBXGroup;
 			children = (
@@ -103,6 +126,7 @@
 				C2A579F91CBB42DB00BC11A1 /* GPUTextComparison */,
 				C22667331CE553A600F19235 /* LoopBlinnTester */,
 				C2A579F81CBB42DB00BC11A1 /* Products */,
+				374F8E121F86A5A9005D4F65 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -442,9 +466,19 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = JL8K7LH7KS;
+				HEADER_SEARCH_PATHS = (
+					/opt/local/include,
+					/usr/local/Cellar/cgal/4.11/include,
+				);
 				INFOPLIST_FILE = GPUTextComparison/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks /usr/local/lib";
+				LIBRARY_SEARCH_PATHS = (
+					/opt/local/lib,
+					/usr/local/lib,
+					/usr/local/Cellar/cgal/4.11/lib,
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = /usr/local/include;
 				OTHER_LDFLAGS = (
 					"-lCGAL",
 					"-lgmp",
@@ -467,9 +501,19 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				DEVELOPMENT_TEAM = JL8K7LH7KS;
+				HEADER_SEARCH_PATHS = (
+					/opt/local/include,
+					/usr/local/Cellar/cgal/4.11/include,
+				);
 				INFOPLIST_FILE = GPUTextComparison/Info.plist;
-				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks /usr/local/lib";
+				LIBRARY_SEARCH_PATHS = (
+					/opt/local/lib,
+					/usr/local/lib,
+					/usr/local/Cellar/cgal/4.11/lib,
+				);
 				MACOSX_DEPLOYMENT_TARGET = 10.13;
+				MTL_HEADER_SEARCH_PATHS = /usr/local/include;
 				OTHER_LDFLAGS = (
 					"-lCGAL",
 					"-lgmp",
