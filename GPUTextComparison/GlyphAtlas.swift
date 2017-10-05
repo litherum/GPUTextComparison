@@ -23,7 +23,7 @@ class GlyphAtlas {
 
     init(texture: MTLTexture) {
         self.texture = texture
-        guard let bitmapContext = CGBitmapContextCreate(nil, texture.width, texture.height, 8, 0, CGColorSpaceCreateDeviceGray(), CGImageAlphaInfo.None.rawValue) else {
+        guard let bitmapContext = CGBitmapContextCreate(nil, texture.width, texture.height, 8, 0, CGColorSpaceCreateDeviceGray(), CGImageAlphaInfo.none.rawValue) else {
             fatalError()
         }
         backgroundColor = CGColorCreateGenericGray(0.0, 1.0)
@@ -53,11 +53,12 @@ class GlyphAtlas {
     // Returns nil iff the atlas is full
     func put(font: CTFont, glyph: CGGlyph, subpixelPosition: CGPoint) -> CGRect? {
         var localGlyph = glyph
-        var boundingRect = CGRectZero;
+        var boundingRect : CGRect = .zero
+
         CTFontGetBoundingRectsForGlyphs(font, .Default, &localGlyph, &boundingRect, 1)
 
-        if boundingRect == CGRectZero {
-            return CGRectZero
+        if boundingRect == .zero {
+            return .zero
         }
 
         let boundingRectOffset = CGSizeMake((CGFloat(texture.width) - boundingRect.width) / 2, (CGFloat(texture.height) - boundingRect.height) / 2)
@@ -84,6 +85,7 @@ class GlyphAtlas {
 
         let pixelSnappingAmount = adjustedBoundingRect.offsetBy(dx: -affectedPixelsMinCorner.x, dy: -affectedPixelsMinCorner.y)
         return pixelSnappingAmount.offsetBy(dx: CGFloat(textureLocation.origin.x), dy: CGFloat(textureLocation.origin.y))
-        
+
     }
 }
+

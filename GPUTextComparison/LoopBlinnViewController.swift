@@ -102,7 +102,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         }
     }
 
-    private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireVertexBuffer( usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -114,7 +114,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         }
     }
 
-    private func acquireCoefficientBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireCoefficientBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if coefficientBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(CoefficientBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -136,7 +136,13 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         return true
     }
 
-    private func appendVertices(glyph: Glyph, positions: [Float], coefficients: [Float], vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int) {
+    private func appendVertices(glyph: Glyph,
+                                positions: [Float],
+                                coefficients: [Float],
+                                vertexBuffer: MTLBuffer,
+                                vertexBufferUtilization: inout Int,
+                                coefficientBuffer: MTLBuffer,
+                                coefficientBufferUtilization: inout Int) {
         assert(canAppendVertices(positions.count, coefficientsCount: coefficients.count, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: coefficientBufferUtilization))
 
         let pVertexData = vertexBuffer.contents()
@@ -186,7 +192,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
 
         let commandBuffer = commandQueue.commandBuffer()
 
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
 

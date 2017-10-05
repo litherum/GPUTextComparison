@@ -16,16 +16,18 @@ extension NaiveStencilViewController.GlyphCacheKey: Hashable {
         //let b = Int(CFHash(font))
         return a ^ b
     }
+
+    static func ==(lhs: NaiveStencilViewController.GlyphCacheKey, rhs: NaiveStencilViewController.GlyphCacheKey) -> Bool {
+        return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
+    }
+
 }
 
-func ==(lhs: NaiveStencilViewController.GlyphCacheKey, rhs: NaiveStencilViewController.GlyphCacheKey) -> Bool {
-    return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
-}
 
 class NaiveStencilViewController: TextViewController, MTKViewDelegate {
 
     var device: MTLDevice! = nil
-    
+
     var commandQueue: MTLCommandQueue! = nil
     var pipelineState: MTLRenderPipelineState! = nil
     var countDepthStencilState: MTLDepthStencilState! = nil
@@ -50,9 +52,9 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     var cache: [GlyphCacheKey : GlyphCacheValue] = [:]
 
     override func viewDidLoad() {
-        
+
         super.viewDidLoad()
-        
+
         device = MTLCreateSystemDefaultDevice()
         guard device != nil else {
             fatalError()
@@ -63,17 +65,18 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         view.delegate = self
         view.device = device
         view.sampleCount = 1
-        view.depthStencilPixelFormat = .Depth32Float_Stencil8
+        // .Depth32Float_Stencil8
+        view.depthStencilPixelFormat = .depth32Float_stencil8
         view.clearStencil = 0
         loadAssets()
     }
-    
+
     private func loadAssets() {
         // load any resources required for rendering
         let view = self.view as! MTKView
         commandQueue = device.newCommandQueue()
         commandQueue.label = "main command queue"
-        
+
         let defaultLibrary = device.newDefaultLibrary()!
         let fragmentProgram = defaultLibrary.newFunctionWithName("stencilFragment")!
         let vertexProgram = defaultLibrary.newFunctionWithName("stencilVertex")!
@@ -83,16 +86,16 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         vertexDescriptor.attributes[0].format = .Float2
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        
+
         let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
         pipelineStateDescriptor.vertexFunction = vertexProgram
         pipelineStateDescriptor.fragmentFunction = fragmentProgram
         pipelineStateDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineStateDescriptor.sampleCount = view.sampleCount
-        pipelineStateDescriptor.depthAttachmentPixelFormat = .Depth32Float_Stencil8
-        pipelineStateDescriptor.stencilAttachmentPixelFormat = .Depth32Float_Stencil8
+        pipelineStateDescriptor.depthAttachmentPixelFormat = .depth32Float_stencil8
+        pipelineStateDescriptor.stencilAttachmentPixelFormat = .depth32Float_stencil8
         pipelineStateDescriptor.vertexDescriptor = vertexDescriptor
-        
+
         do {
             try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
         } catch let error {
@@ -100,12 +103,12 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         }
 
         let countFrontFaceStencil = MTLStencilDescriptor()
-        countFrontFaceStencil.stencilCompareFunction = .Never
-        countFrontFaceStencil.stencilFailureOperation = .IncrementWrap
+        countFrontFaceStencil.stencilCompareFunction = .never
+        countFrontFaceStencil.stencilFailureOperation = .incrementWrap
 
         let countBackFaceStencil = MTLStencilDescriptor()
-        countBackFaceStencil.stencilCompareFunction = .Never
-        countBackFaceStencil.stencilFailureOperation = .DecrementWrap
+        countBackFaceStencil.stencilCompareFunction = .never
+        countBackFaceStencil.stencilFailureOperation = .decrementWrap
 
         let countDepthStencilDescriptor = MTLDepthStencilDescriptor()
         countDepthStencilDescriptor.frontFaceStencil = countFrontFaceStencil
@@ -151,7 +154,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         return true
     }
 
-    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], vertexCount: Int) {
+    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, vertexBuffer: inout MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
         renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
@@ -254,7 +257,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         }
         return result
     }
-    
+
     func drawInMTKView(view: MTKView) {
         if frames.count == 0 {
             return
@@ -333,10 +336,10 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
 
         frameCounter = frameCounter + 1
     }
-    
-    
+
+
     func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
-        
+
     }
 }
 

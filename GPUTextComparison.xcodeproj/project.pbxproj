@@ -194,6 +194,8 @@
 				TargetAttributes = {
 					C22667311CE553A600F19235 = {
 						CreatedOnToolsVersion = 7.3.1;
+						DevelopmentTeam = JL8K7LH7KS;
+						ProvisioningStyle = Automatic;
 					};
 					C2A579F61CBB42DB00BC11A1 = {
 						CreatedOnToolsVersion = 7.3;
@@ -303,15 +305,20 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = JL8K7LH7KS;
 				INFOPLIST_FILE = LoopBlinnTester/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				OTHER_LDFLAGS = (
 					"-lgmp",
 					"-lCGAL",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = Litherum.LoopBlinnTester;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "LoopBlinnTester/LoopBlinnTester-Bridging-Header.h";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -322,15 +329,20 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "Mac Developer";
+				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
+				DEVELOPMENT_TEAM = JL8K7LH7KS;
 				INFOPLIST_FILE = LoopBlinnTester/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.12;
 				OTHER_LDFLAGS = (
 					"-lgmp",
 					"-lCGAL",
 				);
 				PRODUCT_BUNDLE_IDENTIFIER = Litherum.LoopBlinnTester;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SWIFT_OBJC_BRIDGING_HEADER = "LoopBlinnTester/LoopBlinnTester-Bridging-Header.h";
 			};
 			name = Release;
@@ -432,6 +444,7 @@
 				DEVELOPMENT_TEAM = JL8K7LH7KS;
 				INFOPLIST_FILE = GPUTextComparison/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-lCGAL",
 					"-lgmp",
@@ -456,6 +469,7 @@
 				DEVELOPMENT_TEAM = JL8K7LH7KS;
 				INFOPLIST_FILE = GPUTextComparison/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/../Frameworks";
+				MACOSX_DEPLOYMENT_TARGET = 10.13;
 				OTHER_LDFLAGS = (
 					"-lCGAL",
 					"-lgmp",

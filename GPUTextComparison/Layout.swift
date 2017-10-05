@@ -17,7 +17,7 @@ struct Glyph {
 typealias Frame = [Glyph]
 
 func layout() -> [Frame] {
-    let path = NSBundle.mainBundle().pathForResource("shakespeare", ofType: "txt")!
+    let path = Bundle.main.pathForResource("shakespeare", ofType: "txt")!
     var encoding = UInt(0)
     var string = ""
     do {
@@ -31,10 +31,10 @@ func layout() -> [Frame] {
         endIndex = endIndex.successor()
     }
     string = string.substringToIndex(endIndex)*/
-    guard let font = CTFontCreateUIFontForLanguage(.System, 50, nil) else {
+    guard let font = CTFontCreateUIFontForLanguage(.system, 50, nil) else {
         fatalError()
     }
-    let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string, [kCTFontAttributeName as String : font])
+    let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string as CFString, [kCTFontAttributeName as String : font])
     let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
     var frameStart = CFIndex(0)
     var result : [Frame] = []
