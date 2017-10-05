@@ -305,13 +305,31 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
 
             assert(canAppendVertices(vertices: geometry, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization))
 
-            let pVertexData = vertexBuffer.contents()
-            let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+//            let pVertexData = vertexBuffer.contents()
+
+            /*
+             extension MTLBuffer {
+             subscript<T>(index : Int) -> UnsafeMutablePointer<T> {
+             return contents().assumingMemoryBound(to: T.self).advanced(by: index)
+             }
+             //    subscript<T>(index : Int) -> T {
+             //        get {
+             //            return contents().assumingMemoryBound(to: T.self).advanced(by: index)
+             //        }
+             //        set {
+             //            contents().assumingMemoryBound(to: T.self).advanced(by: index).pointee = newValue
+             //        }
+             //    }
+             }
+ */
+
+//            let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
 
             assert(geometry.count % 2 == 0)
+            let ptr = vertexBuffer.contents().assumingMemoryBound(to: Float.self)
             for i in 0 ..< geometry.count / 2 {
-                vVertexData[i * 2] = geometry[i * 2] + Float(glyph.position.x)
-                vVertexData[i * 2 + 1] = geometry[i * 2 + 1] + Float(glyph.position.y)
+                ptr.advanced(by: i * 2).pointee = geometry[i * 2] + Float(glyph.position.x)
+                ptr.advanced(by: i * 2 + 1).pointee = geometry[i * 2 + 1] + Float(glyph.position.y)
             }
             vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: geometry[0]) * geometry.count
         }

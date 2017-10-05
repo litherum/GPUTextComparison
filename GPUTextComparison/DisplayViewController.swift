@@ -177,7 +177,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         assert(canAppendQuad(vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
         
         let pVertexData = vertexBuffer.contents()
-        let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
+        let vVertexData = pVertexData.assumingMemoryBound(to: Float.self).advanced(by: vertexBufferUtilization)
         let newVertices: [Float] =
         [
             Float(positionRect.origin.x), Float(positionRect.origin.y),
@@ -189,11 +189,14 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             Float(positionRect.origin.x), Float(positionRect.origin.y),
         ]
 
-        vVertexData.initializeFrom(newVertices)
+
+        vVertexData.initialize(from: newVertices, count: newVertices.count)
         vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: newVertices[0]) * 2 * 3 * 2
-        
+
+
         let pTextureCoordinateData = textureCoordinateBuffer.contents()
-        let vTextureCoordinateData = UnsafeMutablePointer<Float>(pTextureCoordinateData + textureCoordinateBufferUtilization)
+
+        let vTextureCoordinateData = pTextureCoordinateData.assumingMemoryBound(to: Float.self).advanced(by: textureCoordinateBufferUtilization)
         let newTextureCoordinates: [Float] =
         [
             Float(textureRect.origin.x), Float(textureRect.maxY),
@@ -205,7 +208,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             Float(textureRect.origin.x), Float(textureRect.maxY),
         ]
         
-        vTextureCoordinateData.initializeFrom(newTextureCoordinates)
+        vVertexData.initialize(from: newVertices, count: newVertices.count)
         textureCoordinateBufferUtilization = textureCoordinateBufferUtilization + MemoryLayout.size(ofValue: newTextureCoordinates[0]) * 2 * 3 * 2
     }
 
