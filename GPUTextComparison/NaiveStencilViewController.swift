@@ -132,7 +132,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         fillVertexBuffer = device.newBufferWithBytes(fillVertexData, length: sizeofValue(fillVertexData[0]) * fillVertexData.count, options: .StorageModeManaged)
     }
 
-    private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireVertexBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
             usedBuffers.append(newBuffer)
