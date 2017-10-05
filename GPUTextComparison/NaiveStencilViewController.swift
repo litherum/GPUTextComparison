@@ -167,29 +167,30 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     }
 
     private class func interpolateQuadraticBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint) -> CGPoint {
-        let ab = NaiveStencilViewController.interpolate(t, p0: p0, p1: p1)
-        let bc = NaiveStencilViewController.interpolate(t, p0: p1, p1: p2)
-        return NaiveStencilViewController.interpolate(t, p0: ab, p1: bc)
+        let ab = NaiveStencilViewController.interpolate(t: t, p0: p0, p1: p1)
+        let bc = NaiveStencilViewController.interpolate(t: t, p0: p1, p1: p2)
+        return NaiveStencilViewController.interpolate(t: t, p0: ab, p1: bc)
     }
 
     private class func interpolateCubicBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint, p3: CGPoint) -> CGPoint {
-        let ab = NaiveStencilViewController.interpolate(t, p0: p0, p1: p1)
-        let bc = NaiveStencilViewController.interpolate(t, p0: p1, p1: p2)
-        let cd = NaiveStencilViewController.interpolate(t, p0: p2, p1: p3)
-        let abc = NaiveStencilViewController.interpolate(t, p0: ab, p1: bc)
-        let bcd = NaiveStencilViewController.interpolate(t, p0: bc, p1: cd)
-        return NaiveStencilViewController.interpolate(t, p0: abc, p1: bcd)
+        let ab = NaiveStencilViewController.interpolate(t: t, p0: p0, p1: p1)
+        let bc = NaiveStencilViewController.interpolate(t: t, p0: p1, p1: p2)
+        let cd = NaiveStencilViewController.interpolate(t: t, p0: p2, p1: p3)
+        let abc = NaiveStencilViewController.interpolate(t: t, p0: ab, p1: bc)
+        let bcd = NaiveStencilViewController.interpolate(t: t, p0: bc, p1: cd)
+        return NaiveStencilViewController.interpolate(t: t, p0: abc, p1: bcd)
     }
 
     private class func approximatePath(path: CGPath) -> CGPath
     {
         let result = CGMutablePath()
-        var currentPoint = CGPointZero
-        var subpathBegin = CGPointZero
+        var currentPoint = CGPoint.zero
+        var subpathBegin = CGPoint.zero
         let definition = 10
         iterateCGPath(path) {(element : CGPathElement) in
             switch element.type {
             case .moveToPoint:
+//                result.move(to: element.points[0])
                 CGPathMoveToPoint(result, nil, element.points[0].x, element.points[0].y)
                 currentPoint = element.points[0]
                 subpathBegin = currentPoint
@@ -219,7 +220,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     private class func generateGeometry(path: CGPath) -> [Float] {
         var result: [Float] = []
         var previousPoint : CGPoint?
-        var subpathBegin = CGPointZero
+        var subpathBegin = CGPoint.zero
         iterateCGPath(path) {(element : CGPathElement) in
             switch element.type {
             case .moveToPoint:
@@ -276,7 +277,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
             return
         }
 
-        let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
         renderEncoder.setDepthStencilState(countDepthStencilState)
 
@@ -322,12 +323,12 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: 1)
 
         renderEncoder.endEncoding()
-        commandBuffer.presentDrawable(currentDrawable)
+        commandBuffer.present(currentDrawable)
 
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
             dispatch_async(dispatch_get_main_queue(), { [weak self] in
                 if let strongSelf = self {
-                    strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
+                    strongSelf.vertexBuffers.append(contentsOf:usedVertexBuffers)
                 }
             })
         }

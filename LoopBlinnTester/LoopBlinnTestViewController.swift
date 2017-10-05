@@ -123,9 +123,9 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
         
-        vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         vertexBufferUtilization = 0
-        coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         coefficientBufferUtilization = 0
     }
 
@@ -143,9 +143,9 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
         
-        var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         var vertexBufferUtilization = 0
-        var coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        var coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         var coefficientBufferUtilization = 0
 
         t = t + 1
@@ -184,13 +184,13 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
         
         renderEncoder.endEncoding()
-        commandBuffer.presentDrawable(currentDrawable)
+        commandBuffer.present(currentDrawable)
         
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
             dispatch_async(dispatch_get_main_queue(), { [weak self] in
                 if let strongSelf = self {
-                    strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
-                    strongSelf.coefficientBuffers.appendContentsOf(usedCoefficientBuffers)
+                    strongSelf.vertexBuffers.append(contentsOf:usedVertexBuffers)
+                    strongSelf.coefficientBuffers.append(contentsOf:usedCoefficientBuffers)
                 }
             })
         }

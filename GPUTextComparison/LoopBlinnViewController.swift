@@ -178,9 +178,9 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
-        vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         vertexBufferUtilization = 0
-        coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         coefficientBufferUtilization = 0
     }
     var t = 0
@@ -198,7 +198,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         var usedVertexBuffers: [MTLBuffer] = []
         var usedCoefficientBuffers: [MTLBuffer] = []
 
-        let commandBuffer = commandQueue.makeCommandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()!
 
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
@@ -207,9 +207,9 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
 
-        var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         var vertexBufferUtilization = 0
-        var coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        var coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         var coefficientBufferUtilization = 0
 
         for glyph in frame {
@@ -257,13 +257,13 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.endEncoding()
-        commandBuffer.presentDrawable(currentDrawable)
+        commandBuffer.present(currentDrawable)
 
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
             dispatch_async(dispatch_get_main_queue(), { [weak self] in
                 if let strongSelf = self {
-                    strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
-                    strongSelf.coefficientBuffers.appendContentsOf(usedCoefficientBuffers)
+                    strongSelf.vertexBuffers.append(contentsOf:usedVertexBuffers)
+                    strongSelf.coefficientBuffers.append(contentsOf:usedCoefficientBuffers)
                 }
             })
         }

@@ -46,7 +46,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
     var textureCoordinateBuffers: [MTLBuffer] = []
     var texture: MTLTexture! = nil
 
-    let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
+    let inflightSemaphore = DispatchSemaphore(value: MaxBuffers)
     var bufferIndex = 0
 
     var frameCounter = 0
@@ -119,9 +119,9 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
         let textureWidth = 4096
         let textureHeight = 4096
-        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .R8Unorm, width: textureWidth, height: textureHeight, mipmapped: false)
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: textureWidth, height: textureHeight, mipmapped: false)
         texture = device.makeTexture(descriptor: textureDescriptor)
-        let newData = Array<UInt8>(repeatedValue: UInt8(255), count: textureWidth * textureHeight)
+        let newData = Array<UInt8>(repeating: UInt8(255), count: textureWidth * textureHeight)
         texture.replaceRegion(MTLRegionMake2D(0, 0, textureWidth, textureHeight), mipmapLevel: 0, withBytes: newData, bytesPerRow: 4096)
 
         glyphAtlas = GlyphAtlas(texture: texture)
@@ -215,7 +215,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         renderEncoder.setFragmentTexture(texture, index: 0)
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
-        vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         vertexBufferUtilization = 0
         textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
         textureCoordinateBufferUtilization = 0
@@ -234,7 +234,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         var usedVertexBuffers: [MTLBuffer] = []
         var usedTextureCoordinateBuffers: [MTLBuffer] = []
 
-        let commandBuffer = commandQueue.makeCommandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()!
 
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
@@ -242,7 +242,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
 
-        var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         var vertexBufferUtilization = 0
         var textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
         var textureCoordinateBufferUtilization = 0
@@ -257,7 +257,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             subpixelPosition = CGSize(floor(subpixelPosition.width), floor(subpixelPosition.height))
             subpixelPosition = CGSize(subpixelPosition.width / subpixelRoundFactor, subpixelPosition.height / subpixelRoundFactor)
             let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font, subpixelPosition: CGPointMake(subpixelPosition.width, subpixelPosition.height))
-            var box = CGRectZero
+            var box = CGRect.zero
             if let cacheLookup = cache[key] {
                 box = cacheLookup.space
             } else {
@@ -269,10 +269,10 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             }
 
             var localGlyph = glyph.glyphID
-            var boundingRect = CGRectZero;
+            var boundingRect = CGRect.zero;
             CTFontGetBoundingRectsForGlyphs(glyph.font, .Default, &localGlyph, &boundingRect, 1)
 
-            if boundingRect == CGRectZero {
+            if boundingRect == CGRect.zero {
                 continue
             }
 
@@ -281,13 +281,13 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.endEncoding()
-        commandBuffer.presentDrawable(currentDrawable)
+        commandBuffer.present(currentDrawable)
 
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
             dispatch_async(dispatch_get_main_queue(), { [weak self] in
                 if let strongSelf = self {
-                    strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
-                    strongSelf.textureCoordinateBuffers.appendContentsOf(usedTextureCoordinateBuffers)
+                    strongSelf.vertexBuffers.append(contentsOf: usedVertexBuffers)
+                    strongSelf.textureCoordinateBuffers.append(contentsOf:usedTextureCoordinateBuffers)
                 }
             })
         }
@@ -298,7 +298,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
     }
     
     
-    func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         
     }
 }
