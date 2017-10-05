@@ -76,9 +76,10 @@ class GlyphAtlas {
         bitmapContext.setFillColor(foregroundColor)
         CTFontDrawGlyphs(font, &localGlyph, &adjustedOrigin, 1, bitmapContext)
 
-        let bitmapData = UnsafeMutablePointer<UInt8>(CGBitmapContextGetData(bitmapContext))
-        let localBitmapData = bitmapData + Int(affectedPixelsMinCorner.y) * CGBitmapContextGetBytesPerRow(bitmapContext) + Int(affectedPixelsMinCorner.x)
-        texture.replaceRegion(textureLocation, mipmapLevel: 0, withBytes: localBitmapData, bytesPerRow: CGBitmapContextGetBytesPerRow(bitmapContext))
+        let bitmapData = bitmapContext.data!
+
+        let localBitmapData = bitmapData + Int(affectedPixelsMinCorner.y) * bitmapContext.bytesPerRow + Int(affectedPixelsMinCorner.x)
+        texture.replace(region : textureLocation, mipmapLevel: 0, withBytes: localBitmapData, bytesPerRow: bitmapContext.bytesPerRow)
 
         bitmapContext.setFillColor(backgroundColor)
         bitmapContext.fill(CGRect(affectedPixelsMinCorner.x, affectedPixelsMinCorner.y, affectedPixelsSize.width, affectedPixelsSize.height))
