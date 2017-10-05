@@ -9,6 +9,12 @@
 import Cocoa
 import MetalKit
 
+extension CGSize {
+    init(_ w : CGFloat, _ h : CGFloat) {
+        self.init(width: w, height: h)
+    }
+}
+
 let MaxBuffers = 3
 let VertexBufferSize = 1024*1024
 let TextureCoordinateBufferSize = 1024*1024
@@ -22,11 +28,13 @@ extension DisplayViewController.GlyphCacheKey: Hashable {
         //let d = Int(CFHash(font))
         return a ^ b ^ c ^ d
     }
+
+    static func ==(lhs: DisplayViewController.GlyphCacheKey, rhs: DisplayViewController.GlyphCacheKey) -> Bool {
+        return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font) && lhs.subpixelPosition == rhs.subpixelPosition
+    }
 }
 
-func ==(lhs: DisplayViewController.GlyphCacheKey, rhs: DisplayViewController.GlyphCacheKey) -> Bool {
-    return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font) && lhs.subpixelPosition == rhs.subpixelPosition
-}
+
 
 class DisplayViewController: TextViewController, MTKViewDelegate {
     
@@ -79,12 +87,12 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
     private func loadAssets() {
         // load any resources required for rendering
         let view = self.view as! MTKView
-        commandQueue = device.newCommandQueue()
+        commandQueue = device.makeCommandQueue()
         commandQueue.label = "main command queue"
         
-        let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.newFunctionWithName("textureFragment")!
-        let vertexProgram = defaultLibrary.newFunctionWithName("textureVertex")!
+        let defaultLibrary = device.makeDefaultLibrary()!
+        let fragmentProgram = defaultLibrary.makeFunction(name:"textureFragment")!
+        let vertexProgram = defaultLibrary.makeFunction(name:"textureVertex")!
         
         let vertexDescriptor = MTLVertexDescriptor()
         vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
@@ -119,7 +127,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         glyphAtlas = GlyphAtlas(texture: texture)
     }
 
-    private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireVertexBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -131,7 +139,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         }
     }
 
-    private func acquireTextureCoordinateBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireTextureCoordinateBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if textureCoordinateBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(TextureCoordinateBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -153,7 +161,12 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         return true
     }
 
-    private func appendQuad(positionRect: CGRect, textureRect: CGRect, vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int) {
+    private func appendQuad(positionRect: CGRect,
+                            textureRect: CGRect,
+                            vertexBuffer: MTLBuffer,
+                            vertexBufferUtilization: inout Int,
+                            textureCoordinateBuffer: MTLBuffer,
+                            textureCoordinateBufferUtilization: inout Int) {
         assert(canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
         
         let pVertexData = vertexBuffer.contents()
@@ -170,7 +183,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         ]
 
         vVertexData.initializeFrom(newVertices)
-        vertexBufferUtilization = vertexBufferUtilization + sizeofValue(newVertices[0]) * 2 * 3 * 2
+        vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: newVertices[0]) * 2 * 3 * 2
         
         let pTextureCoordinateData = textureCoordinateBuffer.contents()
         let vTextureCoordinateData = UnsafeMutablePointer<Float>(pTextureCoordinateData + textureCoordinateBufferUtilization)
@@ -186,14 +199,21 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         ]
         
         vTextureCoordinateData.initializeFrom(newTextureCoordinates)
-        textureCoordinateBufferUtilization = textureCoordinateBufferUtilization + sizeofValue(newTextureCoordinates[0]) * 2 * 3 * 2
+        textureCoordinateBufferUtilization = textureCoordinateBufferUtilization + MemoryLayout.size(ofValue: newTextureCoordinates[0]) * 2 * 3 * 2
     }
 
-    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout textureCoordinateBuffer: MTLBuffer, inout textureCoordinateBufferUtilization: Int, inout usedTextureCoordinateBuffers: [MTLBuffer], vertexCount: Int) {
+    private func issueDraw(renderEncoder: MTLRenderCommandEncoder,
+                           vertexBuffer: inout MTLBuffer,
+                           vertexBufferUtilization: inout Int,
+                           usedVertexBuffers: inout [MTLBuffer],
+                           textureCoordinateBuffer: inout MTLBuffer,
+                           textureCoordinateBufferUtilization: inout Int,
+                           usedTextureCoordinateBuffers: inout [MTLBuffer],
+                           vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(textureCoordinateBuffer, offset:0, index: 1)
         renderEncoder.setFragmentTexture(texture, index: 0)
-        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
         vertexBufferUtilization = 0
@@ -216,7 +236,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
         let commandBuffer = commandQueue.commandBuffer()
 
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
@@ -231,10 +251,11 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             // FIXME: Gracefully handle full geometry buffers
 
             let subpixelRoundFactor = CGFloat(4)
-            var subpixelPosition = CGSizeMake(modf(glyph.position.x).1, modf(glyph.position.y).1)
-            subpixelPosition = CGSizeMake(subpixelPosition.width * subpixelRoundFactor, subpixelPosition.height * subpixelRoundFactor)
-            subpixelPosition = CGSizeMake(floor(subpixelPosition.width), floor(subpixelPosition.height))
-            subpixelPosition = CGSizeMake(subpixelPosition.width / subpixelRoundFactor, subpixelPosition.height / subpixelRoundFactor)
+
+            var subpixelPosition = CGSize(modf(glyph.position.x).1, modf(glyph.position.y).1)
+            subpixelPosition = CGSize(subpixelPosition.width * subpixelRoundFactor, subpixelPosition.height * subpixelRoundFactor)
+            subpixelPosition = CGSize(floor(subpixelPosition.width), floor(subpixelPosition.height))
+            subpixelPosition = CGSize(subpixelPosition.width / subpixelRoundFactor, subpixelPosition.height / subpixelRoundFactor)
             let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font, subpixelPosition: CGPointMake(subpixelPosition.width, subpixelPosition.height))
             var box = CGRectZero
             if let cacheLookup = cache[key] {

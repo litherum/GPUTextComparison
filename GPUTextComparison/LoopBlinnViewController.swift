@@ -74,9 +74,9 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         commandQueue = device.makeCommandQueue()
         commandQueue.label = "main command queue"
 
-        let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.newFunctionWithName("loopBlinnFragment")!
-        let vertexProgram = defaultLibrary.newFunctionWithName("loopBlinnVertex")!
+        let defaultLibrary = device.makeDefaultLibrary()!
+        let fragmentProgram = defaultLibrary.makeFunction(name: "loopBlinnFragment")!
+        let vertexProgram = defaultLibrary.makeFunction(name: "loopBlinnVertex")!
 
         let vertexDescriptor = MTLVertexDescriptor()
 
@@ -154,7 +154,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
             vVertexData[i * 2] = positions[i * 2] + Float(glyph.position.x)
             vVertexData[i * 2 + 1] = positions[i * 2 + 1] + Float(glyph.position.y)
         }
-        vertexBufferUtilization = vertexBufferUtilization + sizeofValue(positions[0]) * positions.count
+        vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: positions[0]) * positions.count
 
         let pCoefficientData = coefficientBuffer.contents()
         let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
@@ -163,7 +163,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         for i in 0 ..< coefficients.count {
             vCoefficientData[i] = coefficients[i]
         }
-        coefficientBufferUtilization = coefficientBufferUtilization + sizeofValue(coefficients[0]) * coefficients.count
+        coefficientBufferUtilization = coefficientBufferUtilization + MemoryLayout.size(ofValue: coefficients[0]) * coefficients.count
     }
 
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder,
@@ -176,7 +176,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
                            vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
-        renderEncoder.drawPrimitives(.triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+        renderEncoder.drawPrimitives(type: type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
         vertexBufferUtilization = 0

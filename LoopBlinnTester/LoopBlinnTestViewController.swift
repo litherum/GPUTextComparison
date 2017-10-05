@@ -47,12 +47,12 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
     private func loadAssets() {
         // load any resources required for rendering
         let view = self.view as! MTKView
-        commandQueue = device.newCommandQueue()
+        commandQueue = device.makeCommandQueue()
         commandQueue.label = "main command queue"
         
-        let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.newFunctionWithName("loopBlinnFragment")!
-        let vertexProgram = defaultLibrary.newFunctionWithName("loopBlinnVertex")!
+        let defaultLibrary = device.makeDefaultLibrary()!
+        let fragmentProgram = defaultLibrary.makeFunction(name:"loopBlinnFragment")!
+        let vertexProgram = defaultLibrary.makeFunction(name:"loopBlinnVertex")!
         
         let vertexDescriptor = MTLVertexDescriptor()
         vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
@@ -115,7 +115,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int, inout usedCoefficientBuffers: [MTLBuffer], vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
-        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
         
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
         vertexBufferUtilization = 0
@@ -130,7 +130,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         
         let commandBuffer = commandQueue.commandBuffer()
         
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
         

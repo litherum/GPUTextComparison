@@ -74,12 +74,12 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     private func loadAssets() {
         // load any resources required for rendering
         let view = self.view as! MTKView
-        commandQueue = device.newCommandQueue()
+        commandQueue = device.makeCommandQueue()
         commandQueue.label = "main command queue"
 
-        let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.newFunctionWithName("stencilFragment")!
-        let vertexProgram = defaultLibrary.newFunctionWithName("stencilVertex")!
+        let defaultLibrary = device.makeDefaultLibrary()!
+        let fragmentProgram = defaultLibrary.makeFunction(name:"stencilFragment")!
+        let vertexProgram = defaultLibrary.makeFunction(name:"stencilVertex")!
 
         let vertexDescriptor = MTLVertexDescriptor()
         vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
@@ -132,7 +132,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
             Float(view.bounds.width), 0,
             0, 0
         ]
-        fillVertexBuffer = device.newBufferWithBytes(fillVertexData, length: sizeofValue(fillVertexData[0]) * fillVertexData.count, options: .StorageModeManaged)
+        fillVertexBuffer = device.newBufferWithBytes(fillVertexData, length: MemoryLayout.size(ofValue: fillVertexData[0]) * fillVertexData.count, options: .StorageModeManaged)
     }
 
     private func acquireVertexBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
@@ -156,7 +156,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
 
     private func issueDraw(renderEncoder: MTLRenderCommandEncoder, vertexBuffer: inout MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
-        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
         vertexBufferUtilization = 0
@@ -272,7 +272,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
 
         let commandBuffer = commandQueue.commandBuffer()
 
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
 
@@ -312,14 +312,14 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
                 vVertexData[i * 2] = geometry[i * 2] + Float(glyph.position.x)
                 vVertexData[i * 2 + 1] = geometry[i * 2 + 1] + Float(glyph.position.y)
             }
-            vertexBufferUtilization = vertexBufferUtilization + sizeofValue(geometry[0]) * geometry.count
+            vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: geometry[0]) * geometry.count
         }
 
         issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.setDepthStencilState(fillDepthStencilState)
         renderEncoder.setVertexBuffer(fillVertexBuffer, offset: 0, index: 0)
-        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: 6, instanceCount: 1)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: 6, instanceCount: 1)
 
         renderEncoder.endEncoding()
         commandBuffer.presentDrawable(currentDrawable)
