@@ -204,7 +204,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
             return
         }
 
-        let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
 
         var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
@@ -260,12 +260,13 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         commandBuffer.present(currentDrawable)
 
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
-            dispatch_async(dispatch_get_main_queue(), { [weak self] in
+            DispatchQueue.main.async {
+                [weak self] in
                 if let strongSelf = self {
                     strongSelf.vertexBuffers.append(contentsOf:usedVertexBuffers)
                     strongSelf.coefficientBuffers.append(contentsOf:usedCoefficientBuffers)
                 }
-            })
+            }
         }
 
         commandBuffer.commit()

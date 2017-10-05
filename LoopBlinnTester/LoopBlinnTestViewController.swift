@@ -200,7 +200,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         frameCounter = frameCounter + 1
     }
 
-    func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         
     }
 }

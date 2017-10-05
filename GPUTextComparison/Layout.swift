@@ -45,7 +45,9 @@ func layout() -> [Frame] {
     var frameStart = CFIndex(0)
     var result : [Frame] = []
     while true {
-        let frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(frameStart, 0), CGPathCreateWithRect(CGRectMake(0, 0, 800, 600), nil), nil)
+        let path = CGPath(rect: CGRect(0, 0, 800, 600), transform: nil)
+
+        let frame = CTFramesetterCreateFrame(framesetter, CFRangeMake(frameStart, 0), path, nil)
         let visibleRange = CTFrameGetVisibleStringRange(frame)
         if visibleRange.length == 0 {
             break

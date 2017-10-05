@@ -23,13 +23,13 @@ class GlyphAtlas {
 
     init(texture: MTLTexture) {
         self.texture = texture
-        guard let bitmapContext = CGBitmapContextCreate(nil, texture.width, texture.height, 8, 0, CGColorSpaceCreateDeviceGray(), CGImageAlphaInfo.none.rawValue) else {
+        guard let bitmapContext = CGContext(data: nil, width: texture.width, height: texture.height, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceGray(), bitmapInfo: CGImageAlphaInfo.none.rawValue) else {
             fatalError()
         }
-        backgroundColor = CGColorCreateGenericGray(0.0, 1.0)
-        foregroundColor = CGColorCreateGenericGray(1.0, 1.0)
-        CGContextSetFillColorWithColor(bitmapContext, backgroundColor)
-        CGContextFillRect(bitmapContext, CGRectMake(0, 0, CGFloat(texture.width), CGFloat(texture.height)))
+        backgroundColor = CGColor(gray: 0.0, alpha: 1.0)
+        foregroundColor = CGColor(gray: 1.0, alpha: 1.0)
+        bitmapContext.setFillColor(backgroundColor)
+        bitmapContext.fill(CGRect(0, 0, CGFloat(texture.width), CGFloat(texture.height)))
         self.bitmapContext = bitmapContext
     }
 
@@ -55,7 +55,7 @@ class GlyphAtlas {
         var localGlyph = glyph
         var boundingRect : CGRect = .zero
 
-        CTFontGetBoundingRectsForGlyphs(font, .Default, &localGlyph, &boundingRect, 1)
+        CTFontGetBoundingRectsForGlyphs(font, .default, &localGlyph, &boundingRect, 1)
 
         if boundingRect == .zero {
             return .zero
@@ -69,19 +69,19 @@ class GlyphAtlas {
         let affectedPixelsMinCorner = CGPoint(floor(adjustedBoundingRect.origin.x), floor(adjustedBoundingRect.origin.y))
         let affectedPixelsMaxCorner = CGPoint(ceil(adjustedBoundingRect.maxX), ceil(adjustedBoundingRect.maxY))
         let affectedPixelsSize = CGSize(affectedPixelsMaxCorner.x - affectedPixelsMinCorner.x, affectedPixelsMaxCorner.y - affectedPixelsMinCorner.y)
-        guard let textureLocation = findLocation(Int(affectedPixelsSize.width), height: Int(affectedPixelsSize.height)) else {
+        guard let textureLocation = findLocation(width: Int(affectedPixelsSize.width), height: Int(affectedPixelsSize.height)) else {
             return nil
         }
 
-        CGContextSetFillColorWithColor(bitmapContext, foregroundColor)
+        bitmapContext.setFillColor(foregroundColor)
         CTFontDrawGlyphs(font, &localGlyph, &adjustedOrigin, 1, bitmapContext)
 
         let bitmapData = UnsafeMutablePointer<UInt8>(CGBitmapContextGetData(bitmapContext))
         let localBitmapData = bitmapData + Int(affectedPixelsMinCorner.y) * CGBitmapContextGetBytesPerRow(bitmapContext) + Int(affectedPixelsMinCorner.x)
         texture.replaceRegion(textureLocation, mipmapLevel: 0, withBytes: localBitmapData, bytesPerRow: CGBitmapContextGetBytesPerRow(bitmapContext))
 
-        CGContextSetFillColorWithColor(bitmapContext, backgroundColor)
-        CGContextFillRect(bitmapContext, CGRectMake(affectedPixelsMinCorner.x, affectedPixelsMinCorner.y, affectedPixelsSize.width, affectedPixelsSize.height))
+        bitmapContext.setFillColor(backgroundColor)
+        CGContextFillRect(bitmapContext, CGRect(affectedPixelsMinCorner.x, affectedPixelsMinCorner.y, affectedPixelsSize.width, affectedPixelsSize.height))
 
         let pixelSnappingAmount = adjustedBoundingRect.offsetBy(dx: -affectedPixelsMinCorner.x, dy: -affectedPixelsMinCorner.y)
         return pixelSnappingAmount.offsetBy(dx: CGFloat(textureLocation.origin.x), dy: CGFloat(textureLocation.origin.y))

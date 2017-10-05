@@ -191,26 +191,26 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
             switch element.type {
             case .moveToPoint:
 //                result.move(to: element.points[0])
-                CGPathMoveToPoint(result, nil, element.points[0].x, element.points[0].y)
+                result.move(to: element.points[0])
                 currentPoint = element.points[0]
                 subpathBegin = currentPoint
             case .addLineToPoint:
-                CGPathAddLineToPoint(result, nil, element.points[0].x, element.points[0].y)
+                result.addLine(to: element.points[0])
                 currentPoint = element.points[0]
             case .addQuadCurveToPoint:
                 for i in 1 ... definition {
                     let intermediate = NaiveStencilViewController.interpolateQuadraticBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1])
-                    CGPathAddLineToPoint(result, nil, intermediate.x, intermediate.y)
+                    result.addLine(to: intermediate)
                 }
                 currentPoint = element.points[1]
             case .addCurveToPoint:
                 for i in 1 ... definition {
                     let intermediate = NaiveStencilViewController.interpolateCubicBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1], p3: element.points[2])
-                    CGPathAddLineToPoint(result, nil, intermediate.x, intermediate.y)
+                    result.addLine(to: intermediate)
                 }
                 currentPoint = element.points[2]
             case .closeSubpath:
-                CGPathAddLineToPoint(result, nil, subpathBegin.x, subpathBegin.y)
+                result.addLine(to: subpathBegin)
                 currentPoint = subpathBegin
             }
         }
@@ -259,7 +259,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         return result
     }
 
-    func drawInMTKView(view: MTKView) {
+    func draw(in view: MTKView) {
         if frames.count == 0 {
             return
         }
@@ -326,11 +326,12 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         commandBuffer.present(currentDrawable)
 
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
-            dispatch_async(dispatch_get_main_queue(), { [weak self] in
+            DispatchQueue.main.async { [weak self] in
                 if let strongSelf = self {
                     strongSelf.vertexBuffers.append(contentsOf:usedVertexBuffers)
                 }
-            })
+
+            }
         }
 
         commandBuffer.commit()
@@ -339,7 +340,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     }
 
 
-    func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
 
     }
 }

@@ -43,6 +43,7 @@ extension DisplayViewController.GlyphCacheKey: Hashable {
 
 
 class DisplayViewController: TextViewController, MTKViewDelegate {
+
     
     var device: MTLDevice! = nil
     
@@ -128,7 +129,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .r8Unorm, width: textureWidth, height: textureHeight, mipmapped: false)
         texture = device.makeTexture(descriptor: textureDescriptor)
         let newData = Array<UInt8>(repeating: UInt8(255), count: textureWidth * textureHeight)
-        texture.replaceRegion(MTLRegionMake2D(0, 0, textureWidth, textureHeight), mipmapLevel: 0, withBytes: newData, bytesPerRow: 4096)
+        texture.replace(region: MTLRegionMake2D(0, 0, textureWidth, textureHeight), mipmapLevel: 0, withBytes: newData, bytesPerRow: 4096)
 
         glyphAtlas = GlyphAtlas(texture: texture)
     }
@@ -227,7 +228,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         textureCoordinateBufferUtilization = 0
     }
     
-    func drawInMTKView(view: MTKView) {
+    func draw(in view: MTKView) {
         if frames.count == 0 {
             return
         }
@@ -245,7 +246,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
-        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
 
         var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
@@ -267,7 +268,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             if let cacheLookup = cache[key] {
                 box = cacheLookup.space
             } else {
-                guard let rect = glyphAtlas.put(key.font, glyph: key.glyphID, subpixelPosition: key.subpixelPosition) else {
+                guard let rect = glyphAtlas.put(font: key.font, glyph: key.glyphID, subpixelPosition: key.subpixelPosition) else {
                     fatalError()
                 }
                 box = rect
@@ -276,26 +277,27 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
             var localGlyph = glyph.glyphID
             var boundingRect = CGRect.zero;
-            CTFontGetBoundingRectsForGlyphs(glyph.font, .Default, &localGlyph, &boundingRect, 1)
+            CTFontGetBoundingRectsForGlyphs(glyph.font, .default, &localGlyph, &boundingRect, 1)
 
             if boundingRect == CGRect.zero {
                 continue
             }
 
-            appendQuad(boundingRect.offsetBy(dx: glyph.position.x, dy: glyph.position.y), textureRect: box, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization)
+            appendQuad(positionRect: boundingRect.offsetBy(dx: glyph.position.x, dy: glyph.position.y), textureRect: box, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization)
         }
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
+        issueDraw(renderEncoder: renderEncoder: renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.endEncoding()
         commandBuffer.present(currentDrawable)
 
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
-            dispatch_async(dispatch_get_main_queue(), { [weak self] in
+            DispatchQueue.main.async { [weak self] in
                 if let strongSelf = self {
                     strongSelf.vertexBuffers.append(contentsOf: usedVertexBuffers)
                     strongSelf.textureCoordinateBuffers.append(contentsOf:usedTextureCoordinateBuffers)
                 }
-            })
+
+            }
         }
 
         commandBuffer.commit()
