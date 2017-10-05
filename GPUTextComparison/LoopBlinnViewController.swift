@@ -18,47 +18,48 @@ extension LoopBlinnViewController.GlyphCacheKey: Hashable {
         //let b = Int(CFHash(font))
         return a ^ b
     }
+
+    static func ==(lhs: LoopBlinnViewController.GlyphCacheKey, rhs: LoopBlinnViewController.GlyphCacheKey) -> Bool {
+        return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
+    }
 }
 
-func ==(lhs: LoopBlinnViewController.GlyphCacheKey, rhs: LoopBlinnViewController.GlyphCacheKey) -> Bool {
-    return lhs.glyphID == rhs.glyphID && CFEqual(lhs.font, rhs.font)
-}
 
 class LoopBlinnViewController: TextViewController, MTKViewDelegate {
-    
+
     var device: MTLDevice! = nil
-    
+
     var commandQueue: MTLCommandQueue! = nil
     var pipelineState: MTLRenderPipelineState! = nil
     var vertexBuffers: [MTLBuffer] = []
     var coefficientBuffers: [MTLBuffer] = []
-    
-    let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
+
+    let inflightSemaphore = DispatchSemaphore(value: MaxBuffers)
     var bufferIndex = 0
-    
+
     var frameCounter = 0
-    
+
     struct GlyphCacheKey {
         let glyphID: CGGlyph
         let font: CTFont
     }
-    
+
     struct GlyphCacheValue {
         var positions: [Float]
         var coefficients: [Float]
     }
-    
+
     var cache: [GlyphCacheKey : GlyphCacheValue] = [:]
-    
+
     override func viewDidLoad() {
-        
+
         super.viewDidLoad()
-        
+
         device = MTLCreateSystemDefaultDevice()
         guard device != nil else {
             fatalError()
         }
-        
+
         // setup view properties
         let view = self.view as! MTKView
         view.delegate = self
@@ -66,44 +67,45 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         view.sampleCount = 1
         loadAssets()
     }
-    
+
     private func loadAssets() {
         // load any resources required for rendering
         let view = self.view as! MTKView
-        commandQueue = device.newCommandQueue()
+        commandQueue = device.makeCommandQueue()
         commandQueue.label = "main command queue"
-        
-        let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.newFunctionWithName("loopBlinnFragment")!
-        let vertexProgram = defaultLibrary.newFunctionWithName("loopBlinnVertex")!
-        
+
+        let defaultLibrary = device.makeDefaultLibrary()!
+        let fragmentProgram = defaultLibrary.makeFunction(name: "loopBlinnFragment")!
+        let vertexProgram = defaultLibrary.makeFunction(name: "loopBlinnVertex")!
+
         let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
-        vertexDescriptor.layouts[1].stride = sizeof(Float) * 4
-        vertexDescriptor.attributes[0].format = .Float2
+
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
+        vertexDescriptor.layouts[1].stride = MemoryLayout<Float>.size * 4
+        vertexDescriptor.attributes[0].format = .float2
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .Float4
+        vertexDescriptor.attributes[1].format = .float4
         vertexDescriptor.attributes[1].offset = 0
         vertexDescriptor.attributes[1].bufferIndex = 1
-        
+
         let pipelineStateDescriptor = MTLRenderPipelineDescriptor()
         pipelineStateDescriptor.vertexFunction = vertexProgram
         pipelineStateDescriptor.fragmentFunction = fragmentProgram
         pipelineStateDescriptor.colorAttachments[0].pixelFormat = view.colorPixelFormat
         pipelineStateDescriptor.sampleCount = view.sampleCount
         pipelineStateDescriptor.vertexDescriptor = vertexDescriptor
-        
+
         do {
-            try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineStateDescriptor)
         } catch let error {
             fatalError("Failed to create pipeline state, error \(error)")
         }
     }
-    
-    private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+
+    private func acquireVertexBuffer( usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
-            let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
+            let newBuffer = device.makeBuffer(length: VertexBufferSize, options: [])!
             usedBuffers.append(newBuffer)
             return newBuffer
         } else {
@@ -112,10 +114,10 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
             return buffer
         }
     }
-    
-    private func acquireCoefficientBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+
+    private func acquireCoefficientBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if coefficientBuffers.isEmpty {
-            let newBuffer = device.newBufferWithLength(CoefficientBufferSize, options: [])
+            let newBuffer = device.makeBuffer(length: CoefficientBufferSize, options: [])!
             usedBuffers.append(newBuffer)
             return newBuffer
         } else {
@@ -124,53 +126,67 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
             return buffer
         }
     }
-    
+
     private func canAppendVertices(verticesCount: Int, coefficientsCount: Int, vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, coefficientBufferUtilization: Int) -> Bool {
-        if vertexBufferUtilization + sizeof(Float) * verticesCount > vertexBuffer.length {
+        if vertexBufferUtilization + MemoryLayout<Float>.size * verticesCount > vertexBuffer.length {
             return false
         }
-        if coefficientBufferUtilization + sizeof(Float) * coefficientsCount > coefficientBuffer.length {
+        if coefficientBufferUtilization + MemoryLayout<Float>.size * coefficientsCount > coefficientBuffer.length {
             return false
         }
         return true
     }
 
-    private func appendVertices(glyph: Glyph, positions: [Float], coefficients: [Float], vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int) {
-        assert(canAppendVertices(positions.count, coefficientsCount: coefficients.count, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: coefficientBufferUtilization))
-        
+    private func appendVertices(glyph: Glyph,
+                                positions: [Float],
+                                coefficients: [Float],
+                                vertexBuffer: MTLBuffer,
+                                vertexBufferUtilization: inout Int,
+                                coefficientBuffer: MTLBuffer,
+                                coefficientBufferUtilization: inout Int) {
+        assert(canAppendVertices(verticesCount: positions.count, coefficientsCount: coefficients.count, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: coefficientBufferUtilization))
+
         let pVertexData = vertexBuffer.contents()
-        let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
-        
+
+        let vVertexData = pVertexData.assumingMemoryBound(to: Float.self).advanced(by: vertexBufferUtilization)
+
         assert(positions.count % 2 == 0)
         for i in 0 ..< positions.count / 2 {
             vVertexData[i * 2] = positions[i * 2] + Float(glyph.position.x)
             vVertexData[i * 2 + 1] = positions[i * 2 + 1] + Float(glyph.position.y)
         }
-        vertexBufferUtilization = vertexBufferUtilization + sizeofValue(positions[0]) * positions.count
-        
+        vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: positions[0]) * positions.count
+
         let pCoefficientData = coefficientBuffer.contents()
-        let vCoefficientData = UnsafeMutablePointer<Float>(pCoefficientData + coefficientBufferUtilization)
-        
+        let vCoefficientData = pCoefficientData.assumingMemoryBound(to: Float.self).advanced(by: vertexBufferUtilization)
+
         assert(coefficients.count % 2 == 0)
         for i in 0 ..< coefficients.count {
             vCoefficientData[i] = coefficients[i]
         }
-        coefficientBufferUtilization = coefficientBufferUtilization + sizeofValue(coefficients[0]) * coefficients.count
+        coefficientBufferUtilization = coefficientBufferUtilization + MemoryLayout.size(ofValue: coefficients[0]) * coefficients.count
     }
-    
-    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int, inout usedCoefficientBuffers: [MTLBuffer], vertexCount: Int) {
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
-        renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, atIndex: 1)
-        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
-        
-        vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+
+    private func issueDraw(renderEncoder: MTLRenderCommandEncoder,
+                           vertexBuffer: inout MTLBuffer,
+                           vertexBufferUtilization: inout Int,
+                           usedVertexBuffers: inout [MTLBuffer],
+                           coefficientBuffer: inout MTLBuffer,
+                           coefficientBufferUtilization: inout Int,
+                           usedCoefficientBuffers: inout [MTLBuffer],
+                           vertexCount: Int) {
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+
+        vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         vertexBufferUtilization = 0
-        coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         coefficientBufferUtilization = 0
     }
     var t = 0
 
-    func drawInMTKView(view: MTKView) {
+    func draw(in view: MTKView) {
         if frames.count == 0 {
             return
         }
@@ -179,24 +195,24 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
             frameCounter = 0
         }
         let frame = frames[frameCounter / slowness]
-        
+
         var usedVertexBuffers: [MTLBuffer] = []
         var usedCoefficientBuffers: [MTLBuffer] = []
-        
-        let commandBuffer = commandQueue.commandBuffer()
-        
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
+
+        let commandBuffer = commandQueue.makeCommandBuffer()!
+
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
-        
-        let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
+
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)!
         renderEncoder.setRenderPipelineState(pipelineState)
-        
-        var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+
+        var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         var vertexBufferUtilization = 0
-        var coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        var coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         var coefficientBufferUtilization = 0
-        
+
         for glyph in frame {
             // FIXME: Gracefully handle full geometry buffers
 
@@ -231,35 +247,36 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
                 }
                 cache[key] = GlyphCacheValue(positions: positions, coefficients: coefficients)
             }
-            
+
             if positions.isEmpty || coefficients.isEmpty {
                 continue
             }
 
-            appendVertices(glyph, positions: positions, coefficients: coefficients, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization)
+            appendVertices(glyph: glyph, positions: positions, coefficients: coefficients, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization)
         }
-        
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
-        
+
+        issueDraw(renderEncoder: renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
+
         renderEncoder.endEncoding()
-        commandBuffer.presentDrawable(currentDrawable)
-        
+        commandBuffer.present(currentDrawable)
+
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
-            dispatch_async(dispatch_get_main_queue(), { [weak self] in
+            DispatchQueue.main.async {
+                [weak self] in
                 if let strongSelf = self {
-                    strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
-                    strongSelf.coefficientBuffers.appendContentsOf(usedCoefficientBuffers)
+                    strongSelf.vertexBuffers.append(contentsOf:usedVertexBuffers)
+                    strongSelf.coefficientBuffers.append(contentsOf:usedCoefficientBuffers)
                 }
-            })
+            }
         }
-        
+
         commandBuffer.commit()
-        
+
         frameCounter = frameCounter + 1
     }
 
-    func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
-        
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
+
     }
 }
 

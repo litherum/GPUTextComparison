@@ -27,10 +27,10 @@ struct TextureVertexInOut
 vertex TextureVertexInOut textureVertex(TextureVertexIn vertexIn [[ stage_in ]])
 {
     TextureVertexInOut outVertex;
-    
+
     outVertex.position = float4x4(float4(2.0 / 800.0, 0, 0, 0), float4(0, 2.0 / 600.0, 0, 0), float4(0, 0, 1, 0), float4(-1, -1, 0, 1)) * float4(vertexIn.position, 0, 1);
     outVertex.textureCoordinate = vertexIn.textureCoordinate;
-    
+
     return outVertex;
 };
 
@@ -39,3 +39,4 @@ fragment half4 textureFragment(TextureVertexInOut inFrag [[stage_in]],
 {
     return half4(half3(texture.sample(s, inFrag.textureCoordinate).x), 1);
 };
+

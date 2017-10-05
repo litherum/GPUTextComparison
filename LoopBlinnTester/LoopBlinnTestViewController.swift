@@ -47,20 +47,20 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
     private func loadAssets() {
         // load any resources required for rendering
         let view = self.view as! MTKView
-        commandQueue = device.newCommandQueue()
+        commandQueue = device.makeCommandQueue()
         commandQueue.label = "main command queue"
         
-        let defaultLibrary = device.newDefaultLibrary()!
-        let fragmentProgram = defaultLibrary.newFunctionWithName("loopBlinnFragment")!
-        let vertexProgram = defaultLibrary.newFunctionWithName("loopBlinnVertex")!
+        let defaultLibrary = device.makeDefaultLibrary()!
+        let fragmentProgram = defaultLibrary.makeFunction(name:"loopBlinnFragment")!
+        let vertexProgram = defaultLibrary.makeFunction(name:"loopBlinnVertex")!
         
         let vertexDescriptor = MTLVertexDescriptor()
-        vertexDescriptor.layouts[0].stride = sizeof(Float) * 2
-        vertexDescriptor.layouts[1].stride = sizeof(Float) * 4
-        vertexDescriptor.attributes[0].format = .Float2
+        vertexDescriptor.layouts[0].stride = MemoryLayout<Float>.size * 2
+        vertexDescriptor.layouts[1].stride = MemoryLayout<Float>.size * 4
+        vertexDescriptor.attributes[0].format = .float2
         vertexDescriptor.attributes[0].offset = 0
         vertexDescriptor.attributes[0].bufferIndex = 0
-        vertexDescriptor.attributes[1].format = .Float4
+        vertexDescriptor.attributes[1].format = .float4
         vertexDescriptor.attributes[1].offset = 0
         vertexDescriptor.attributes[1].bufferIndex = 1
         
@@ -78,7 +78,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         }
     }
     
-    private func acquireVertexBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireVertexBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -90,7 +90,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         }
     }
     
-    private func acquireCoefficientBuffer(inout usedBuffers: [MTLBuffer]) -> MTLBuffer {
+    private func acquireCoefficientBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if coefficientBuffers.isEmpty {
             let newBuffer = device.newBufferWithLength(CoefficientBufferSize, options: [])
             usedBuffers.append(newBuffer)
@@ -103,23 +103,29 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
     }
     
     private func canAppendVertices(verticesCount: Int, coefficientsCount: Int, vertexBuffer: MTLBuffer, vertexBufferUtilization: Int, coefficientBuffer: MTLBuffer, coefficientBufferUtilization: Int) -> Bool {
-        if vertexBufferUtilization + sizeof(Float) * verticesCount > vertexBuffer.length {
+        if vertexBufferUtilization + MemoryLayout<Float>.size * verticesCount > vertexBuffer.length {
             return false
         }
-        if coefficientBufferUtilization + sizeof(Float) * coefficientsCount > coefficientBuffer.length {
+        if coefficientBufferUtilization + MemoryLayout<Float>.size * coefficientsCount > coefficientBuffer.length {
             return false
         }
         return true
     }
     
-    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, inout vertexBuffer: MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], inout coefficientBuffer: MTLBuffer, inout coefficientBufferUtilization: Int, inout usedCoefficientBuffers: [MTLBuffer], vertexCount: Int) {
-        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, atIndex: 0)
-        renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, atIndex: 1)
-        renderEncoder.drawPrimitives(.Triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+    private func issueDraw(renderEncoder: MTLRenderCommandEncoder,
+                           vertexBuffer: inout MTLBuffer,
+                           vertexBufferUtilization: inout Int,
+                           usedVertexBuffers: inout [MTLBuffer],
+                           coefficientBuffer: inout MTLBuffer,
+                           coefficientBufferUtilization: inout Int,
+                           usedCoefficientBuffers: inout [MTLBuffer], vertexCount: Int) {
+        renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
+        renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
         
-        vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         vertexBufferUtilization = 0
-        coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         coefficientBufferUtilization = 0
     }
 
@@ -128,25 +134,25 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         var usedVertexBuffers: [MTLBuffer] = []
         var usedCoefficientBuffers: [MTLBuffer] = []
         
-        let commandBuffer = commandQueue.commandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()
         
-        guard let renderPassDescriptor = view.currentRenderPassDescriptor, currentDrawable = view.currentDrawable else {
+        guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
         
         let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
         
-        var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         var vertexBufferUtilization = 0
-        var coefficientBuffer = acquireCoefficientBuffer(&usedCoefficientBuffers)
+        var coefficientBuffer = acquireCoefficientBuffer(usedBuffers: &usedCoefficientBuffers)
         var coefficientBufferUtilization = 0
 
         t = t + 1
-        let p0 = CGPointMake(700, 100)
-        let p1 = CGPointMake(500, 300)
-        let p2 = CGPointMake(300, 300)
-        let p3 = CGPointMake(100, 100)
+        let p0 = CGPoint(700, 100)
+        let p1 = CGPoint(500, 300)
+        let p2 = CGPoint(300, 300)
+        let p3 = CGPoint(100, 100)
         cubic(p0, p1, p2, p3) { (v0, v1, v2) in
             let newVertices: [Float] = [
                 Float(v0.point.x), Float(v0.point.y),
@@ -159,7 +165,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
 
             vVertexData.initializeFrom(newVertices)
 
-            vertexBufferUtilization = vertexBufferUtilization + sizeof(Float) * 6
+            vertexBufferUtilization = vertexBufferUtilization + MemoryLayout<Float>.size * 6
 
             let newCoefficients: [Float] = [
                 v0.coefficient.x, v0.coefficient.y, v0.coefficient.z, 0,
@@ -172,19 +178,19 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
 
             vCoefficientData.initializeFrom(newCoefficients)
 
-            coefficientBufferUtilization = coefficientBufferUtilization + sizeof(Float) * 12
+            coefficientBufferUtilization = coefficientBufferUtilization + MemoryLayout<Float>.size * 12
         }
 
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (sizeof(Float) * 2))
+        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
         
         renderEncoder.endEncoding()
-        commandBuffer.presentDrawable(currentDrawable)
+        commandBuffer.present(currentDrawable)
         
         commandBuffer.addCompletedHandler{ [weak self] commandBuffer in
             dispatch_async(dispatch_get_main_queue(), { [weak self] in
                 if let strongSelf = self {
-                    strongSelf.vertexBuffers.appendContentsOf(usedVertexBuffers)
-                    strongSelf.coefficientBuffers.appendContentsOf(usedCoefficientBuffers)
+                    strongSelf.vertexBuffers.append(contentsOf:usedVertexBuffers)
+                    strongSelf.coefficientBuffers.append(contentsOf:usedCoefficientBuffers)
                 }
             })
         }
@@ -194,7 +200,7 @@ class LoopBlinnViewController: NSViewController, MTKViewDelegate {
         frameCounter = frameCounter + 1
     }
 
-    func mtkView(view: MTKView, drawableSizeWillChange size: CGSize) {
+    func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
         
     }
 }

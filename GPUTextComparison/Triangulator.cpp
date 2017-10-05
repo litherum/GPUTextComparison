@@ -34,7 +34,8 @@ public:
     }
 
     bool inside() const {
-        return depth.value() % 2 == 1;
+
+        return depth.get() % 2 == 1;
     }
 
 private:
@@ -102,7 +103,7 @@ private:
         for (size_t i = 1; i < insideBorder.size(); ++i) {
             if (!insideBorder[i])
                 break;
-            newVertex = cdt.insert(CDT::Point(insideBorder[i].value().point.x, insideBorder[i].value().point.y));
+            newVertex = cdt.insert(CDT::Point(insideBorder[i].get().point.x, insideBorder[i].get().point.y));
             insertConstraint(currentVertex, newVertex);
             currentVertex = newVertex;
         }
@@ -174,7 +175,7 @@ private:
             border.pop_front();
             auto face = edge.first->neighbor(edge.second);
             if (!face->info().getDepth()) {
-                auto next = flood(face, edge.first->info().getDepth().value() + 1);
+                auto next = flood(face, edge.first->info().getDepth().get() + 1);
                 border.insert(border.end(), next.begin(), next.end());
             }
         }

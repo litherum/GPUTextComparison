@@ -170,10 +170,10 @@ static std::vector<CubicCurve> loop(CGFloat d1, CGFloat d2, CGFloat d3, CGPoint 
         // This is a huge layering violation, but I think it's better than recursion. Maybe we should pass a signal up instead?
         auto t = c0 ? t0 : t1;
         auto subdivided = subdivide(t, p0, p1, p2, p3);
-        std::tie(d1, d2, d3) = computeDs(subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3]).value();
+        std::tie(d1, d2, d3) = computeDs(subdivided[0][0], subdivided[0][1], subdivided[0][2], subdivided[0][3]).get();
         std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
         auto coefficients1 = loopCoefficients(d1, ls, lt, ms, mt);
-        std::tie(d1, d2, d3) = computeDs(subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3]).value();
+        std::tie(d1, d2, d3) = computeDs(subdivided[1][0], subdivided[1][1], subdivided[1][2], subdivided[1][3]).get();
         std::tie(ls, lt, ms, mt) = loopParameters(d1, d2, d3);
         auto coefficients2 = loopCoefficients(d1, ls, lt, ms, mt);
 
@@ -288,7 +288,7 @@ static inline void flipCoefficients(Coefficients& coefficients) {
 bool cubic(CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3, CubicFaceReceiver receiver) {
     CGFloat d1, d2, d3;
     if (auto ds = computeDs(p0, p1, p2, p3))
-        std::tie(d1, d2, d3) = ds.value();
+        std::tie(d1, d2, d3) = ds.get();
     else
         return true;
 
