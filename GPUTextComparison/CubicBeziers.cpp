@@ -117,7 +117,7 @@ static inline boost::optional<std::array<CGFloat, 3>> computeDs(CGPoint p0, CGPo
 }
 
 static inline CGPoint subdivide(CGFloat t, CGPoint a, CGPoint b) {
-    return CGPointMake((1 - t) * a.x + t * b.x, (1 - t) * a.y + t * b.y);
+    return CGPoint((1 - t) * a.x + t * b.x, (1 - t) * a.y + t * b.y);
 }
 
 static inline std::array<std::array<CGPoint, 4>, 2> subdivide(CGFloat t, CGPoint p0, CGPoint p1, CGPoint p2, CGPoint p3) {
@@ -199,7 +199,7 @@ static Coefficients cusp(CGFloat d1, CGFloat d2, CGFloat d3) {
 static inline CubicVertex convertTriangulatedVertex(Triangulation::Vertex& v) {
     auto& point = v.point();
     auto& info = v.info();
-    return { CGPointMake(point.x(), point.y()),
+    return { CGPoint(point.x(), point.y()),
         { static_cast<float>(info.k), static_cast<float>(info.l), static_cast<float>(info.m) },
         -1 };
 }

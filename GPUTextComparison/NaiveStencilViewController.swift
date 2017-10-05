@@ -163,7 +163,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     }
 
     private class func interpolate(t: CGFloat, p0: CGPoint, p1: CGPoint) -> CGPoint {
-        return CGPointMake(t * p1.x + (1 - t) * p0.x, t * p1.y + (1 - t) * p0.y)
+        return CGPoint(t * p1.x + (1 - t) * p0.x, t * p1.y + (1 - t) * p0.y)
     }
 
     private class func interpolateQuadraticBezier(t: CGFloat, p0: CGPoint, p1: CGPoint, p2: CGPoint) -> CGPoint {

@@ -71,7 +71,7 @@ func layout() -> [Frame] {
                 let attributes = CTRunGetAttributes(run) as NSDictionary
                 let usedFont = attributes[kCTFontAttributeName as String] as! CTFont
                 for j in 0 ..< glyphCount {
-                    resultFrame.append(Glyph(glyphID: glyphs[j], font: usedFont, position: CGPointMake(positions[j].x + lineOrigin.x, positions[j].y + lineOrigin.y)))
+                    resultFrame.append(Glyph(glyphID: glyphs[j], font: usedFont, position: CGPoint(positions[j].x + lineOrigin.x, positions[j].y + lineOrigin.y)))
                 }
             }
         }

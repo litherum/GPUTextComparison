@@ -62,12 +62,12 @@ class GlyphAtlas {
         }
 
         let boundingRectOffset = CGSize((CGFloat(texture.width) - boundingRect.width) / 2, (CGFloat(texture.height) - boundingRect.height) / 2)
-        let origin = CGPointMake(floor(boundingRectOffset.width - boundingRect.origin.x), floor(boundingRectOffset.height - boundingRect.origin.y))
-        var adjustedOrigin = CGPointMake(origin.x + subpixelPosition.x, origin.y + subpixelPosition.y)
+        let origin = CGPoint(floor(boundingRectOffset.width - boundingRect.origin.x), floor(boundingRectOffset.height - boundingRect.origin.y))
+        var adjustedOrigin = CGPoint(origin.x + subpixelPosition.x, origin.y + subpixelPosition.y)
 
         let adjustedBoundingRect = boundingRect.offsetBy(dx: adjustedOrigin.x, dy: adjustedOrigin.y)
-        let affectedPixelsMinCorner = CGPointMake(floor(adjustedBoundingRect.origin.x), floor(adjustedBoundingRect.origin.y))
-        let affectedPixelsMaxCorner = CGPointMake(ceil(adjustedBoundingRect.maxX), ceil(adjustedBoundingRect.maxY))
+        let affectedPixelsMinCorner = CGPoint(floor(adjustedBoundingRect.origin.x), floor(adjustedBoundingRect.origin.y))
+        let affectedPixelsMaxCorner = CGPoint(ceil(adjustedBoundingRect.maxX), ceil(adjustedBoundingRect.maxY))
         let affectedPixelsSize = CGSize(affectedPixelsMaxCorner.x - affectedPixelsMinCorner.x, affectedPixelsMaxCorner.y - affectedPixelsMinCorner.y)
         guard let textureLocation = findLocation(Int(affectedPixelsSize.width), height: Int(affectedPixelsSize.height)) else {
             return nil

@@ -62,9 +62,9 @@ public:
                 auto p0 = facesIterator->vertex(0)->point();
                 auto p1 = facesIterator->vertex(1)->point();
                 auto p2 = facesIterator->vertex(2)->point();
-                receiver({ CGPointMake(p0.x(), p0.y()), { 0, 1, 1 } },
-                         { CGPointMake(p1.x(), p1.y()), { 0, 1, 1 } },
-                         { CGPointMake(p2.x(), p2.y()), { 0, 1, 1 } });
+                receiver({ CGPoint(p0.x(), p0.y()), { 0, 1, 1 } },
+                         { CGPoint(p1.x(), p1.y()), { 0, 1, 1 } },
+                         { CGPoint(p2.x(), p2.y()), { 0, 1, 1 } });
             }
         }
 
@@ -74,7 +74,7 @@ public:
 
 private:
     void insertCubicCurve(CDT::Vertex_handle& currentVertex, CGPoint p1, CGPoint p2, CGPoint p3) {
-        auto p0 = CGPointMake(currentVertex->point().x(), currentVertex->point().y());
+        auto p0 = CGPoint(currentVertex->point().x(), currentVertex->point().y());
         __block std::vector<boost::optional<CubicVertex>> insideBorder(8);
         __block std::vector<std::array<CubicTriangleVertex, 3>> localCubicFaces;
         bool degenerate = cubic(p0, p1, p2, p3, ^(CubicVertex v0, CubicVertex v1, CubicVertex v2) {
@@ -127,8 +127,8 @@ private:
                 auto source = currentVertex->point();
                 auto control = element.points[0];
                 auto destination = element.points[1];
-                auto cp1 = CGPointMake(source.x() + 2 * (control.x - source.x()) / 3, source.y() + 2 * (control.y - source.y()) / 3);
-                auto cp2 = CGPointMake(destination.x + 2 * (control.x - destination.x) / 3, destination.y + 2 * (control.y - destination.y) / 3);
+                auto cp1 = CGPoint(source.x() + 2 * (control.x - source.x()) / 3, source.y() + 2 * (control.y - source.y()) / 3);
+                auto cp2 = CGPoint(destination.x + 2 * (control.x - destination.x) / 3, destination.y + 2 * (control.y - destination.y) / 3);
                 insertCubicCurve(currentVertex, cp1, cp2, destination);
                 break;
             }

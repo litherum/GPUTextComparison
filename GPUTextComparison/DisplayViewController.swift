@@ -15,6 +15,12 @@ extension CGSize {
     }
 }
 
+extension CGPoint {
+    init(_ x: CGFloat, _ y: CGFloat) {
+        self.init(x: x, y: y)
+    }
+}
+
 let MaxBuffers = 3
 let VertexBufferSize = 1024*1024
 let TextureCoordinateBufferSize = 1024*1024
@@ -217,7 +223,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
         vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         vertexBufferUtilization = 0
-        textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
+        textureCoordinateBuffer = acquireTextureCoordinateBuffer(usedBuffers: &usedTextureCoordinateBuffers)
         textureCoordinateBufferUtilization = 0
     }
     
@@ -239,12 +245,12 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return
         }
-        let renderEncoder = commandBuffer.renderCommandEncoderWithDescriptor(renderPassDescriptor)
+        let renderEncoder = commandBuffer.makeRenderCommandEncoder(descriptor: renderPassDescriptor)
         renderEncoder.setRenderPipelineState(pipelineState)
 
         var vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         var vertexBufferUtilization = 0
-        var textureCoordinateBuffer = acquireTextureCoordinateBuffer(&usedTextureCoordinateBuffers)
+        var textureCoordinateBuffer = acquireTextureCoordinateBuffer(usedBuffers: &usedTextureCoordinateBuffers)
         var textureCoordinateBufferUtilization = 0
 
         for glyph in frame {
@@ -256,7 +262,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
             subpixelPosition = CGSize(subpixelPosition.width * subpixelRoundFactor, subpixelPosition.height * subpixelRoundFactor)
             subpixelPosition = CGSize(floor(subpixelPosition.width), floor(subpixelPosition.height))
             subpixelPosition = CGSize(subpixelPosition.width / subpixelRoundFactor, subpixelPosition.height / subpixelRoundFactor)
-            let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font, subpixelPosition: CGPointMake(subpixelPosition.width, subpixelPosition.height))
+            let key = GlyphCacheKey(glyphID: glyph.glyphID, font: glyph.font, subpixelPosition: CGPoint(subpixelPosition.width, subpixelPosition.height))
             var box = CGRect.zero
             if let cacheLookup = cache[key] {
                 box = cacheLookup.space
