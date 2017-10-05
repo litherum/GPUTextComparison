@@ -144,9 +144,10 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
                                 vertexBufferUtilization: inout Int,
                                 coefficientBuffer: MTLBuffer,
                                 coefficientBufferUtilization: inout Int) {
-        assert(canAppendVertices(positions.count, coefficientsCount: coefficients.count, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: coefficientBufferUtilization))
+        assert(canAppendVertices(verticesCount: positions.count, coefficientsCount: coefficients.count, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: coefficientBufferUtilization))
 
         let pVertexData = vertexBuffer.contents()
+
         let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
 
         assert(positions.count % 2 == 0)
@@ -251,10 +252,10 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
                 continue
             }
 
-            appendVertices(glyph, positions: positions, coefficients: coefficients, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization)
+            appendVertices(glyph: glyph, positions: positions, coefficients: coefficients, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, coefficientBuffer: coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization)
         }
 
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
+        issueDraw(renderEncoder: renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, coefficientBuffer: &coefficientBuffer, coefficientBufferUtilization: &coefficientBufferUtilization, usedCoefficientBuffers: &usedCoefficientBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.endEncoding()
         commandBuffer.present(currentDrawable)

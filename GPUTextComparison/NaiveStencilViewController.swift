@@ -158,7 +158,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
-        vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        vertexBuffer = acquireVertexBuffer(usedBuffers: &usedVertexBuffers)
         vertexBufferUtilization = 0
     }
 
@@ -199,13 +199,13 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
                 currentPoint = element.points[0]
             case .addQuadCurveToPoint:
                 for i in 1 ... definition {
-                    let intermediate = NaiveStencilViewController.interpolateQuadraticBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1])
+                    let intermediate = NaiveStencilViewController.interpolateQuadraticBezier(t: CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1])
                     result.addLine(to: intermediate)
                 }
                 currentPoint = element.points[1]
             case .addCurveToPoint:
                 for i in 1 ... definition {
-                    let intermediate = NaiveStencilViewController.interpolateCubicBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1], p3: element.points[2])
+                    let intermediate = NaiveStencilViewController.interpolateCubicBezier(t: CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1], p3: element.points[2])
                     result.addLine(to: intermediate)
                 }
                 currentPoint = element.points[2]
@@ -281,7 +281,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         renderEncoder.setRenderPipelineState(pipelineState)
         renderEncoder.setDepthStencilState(countDepthStencilState)
 
-        var vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
+        var vertexBuffer = acquireVertexBuffer(usedBuffers:&usedVertexBuffers)
         var vertexBufferUtilization = 0
 
         for glyph in frame {
@@ -293,8 +293,8 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
                 geometry = cacheLookup.geometry
             } else {
                 if let glyphPath = CTFontCreatePathForGlyph(glyph.font, glyph.glyphID, nil) {
-                    let approximatedPath = NaiveStencilViewController.approximatePath(glyphPath)
-                    geometry = NaiveStencilViewController.generateGeometry(approximatedPath)
+                    let approximatedPath = NaiveStencilViewController.approximatePath(path: glyphPath)
+                    geometry = NaiveStencilViewController.generateGeometry(path: approximatedPath)
                 }
                 cache[key] = GlyphCacheValue(geometry: geometry)
             }
@@ -303,7 +303,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
                 continue
             }
 
-            assert(canAppendVertices(geometry, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization))
+            assert(canAppendVertices(vertices: geometry, vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization))
 
             let pVertexData = vertexBuffer.contents()
             let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
@@ -316,7 +316,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
             vertexBufferUtilization = vertexBufferUtilization + MemoryLayout.size(ofValue: geometry[0]) * geometry.count
         }
 
-        issueDraw(renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
+        issueDraw(renderEncoder: renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.setDepthStencilState(fillDepthStencilState)
         renderEncoder.setVertexBuffer(fillVertexBuffer, offset: 0, index: 0)

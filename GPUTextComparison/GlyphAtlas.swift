@@ -81,7 +81,7 @@ class GlyphAtlas {
         texture.replaceRegion(textureLocation, mipmapLevel: 0, withBytes: localBitmapData, bytesPerRow: CGBitmapContextGetBytesPerRow(bitmapContext))
 
         bitmapContext.setFillColor(backgroundColor)
-        CGContextFillRect(bitmapContext, CGRect(affectedPixelsMinCorner.x, affectedPixelsMinCorner.y, affectedPixelsSize.width, affectedPixelsSize.height))
+        bitmapContext.fill(CGRect(affectedPixelsMinCorner.x, affectedPixelsMinCorner.y, affectedPixelsSize.width, affectedPixelsSize.height))
 
         let pixelSnappingAmount = adjustedBoundingRect.offsetBy(dx: -affectedPixelsMinCorner.x, dy: -affectedPixelsMinCorner.y)
         return pixelSnappingAmount.offsetBy(dx: CGFloat(textureLocation.origin.x), dy: CGFloat(textureLocation.origin.y))

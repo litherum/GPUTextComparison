@@ -174,7 +174,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
                             vertexBufferUtilization: inout Int,
                             textureCoordinateBuffer: MTLBuffer,
                             textureCoordinateBufferUtilization: inout Int) {
-        assert(canAppendQuad(vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
+        assert(canAppendQuad(vertexBuffer: vertexBuffer, vertexBufferUtilization: vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: textureCoordinateBufferUtilization))
         
         let pVertexData = vertexBuffer.contents()
         let vVertexData = UnsafeMutablePointer<Float>(pVertexData + vertexBufferUtilization)
@@ -285,7 +285,13 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
             appendQuad(positionRect: boundingRect.offsetBy(dx: glyph.position.x, dy: glyph.position.y), textureRect: box, vertexBuffer: vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, textureCoordinateBuffer: textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization)
         }
-        issueDraw(renderEncoder: renderEncoder: renderEncoder, vertexBuffer: &vertexBuffer, vertexBufferUtilization: &vertexBufferUtilization, usedVertexBuffers: &usedVertexBuffers, textureCoordinateBuffer: &textureCoordinateBuffer, textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization, usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
+        issueDraw(renderEncoder: renderEncoder,
+                  vertexBuffer: &vertexBuffer,
+                  vertexBufferUtilization: &vertexBufferUtilization,
+                  usedVertexBuffers: &usedVertexBuffers,
+                  textureCoordinateBuffer: &textureCoordinateBuffer,
+                  textureCoordinateBufferUtilization: &textureCoordinateBufferUtilization,
+                  usedTextureCoordinateBuffers: &usedTextureCoordinateBuffers, vertexCount: vertexBufferUtilization / (MemoryLayout<Float>.size * 2))
 
         renderEncoder.endEncoding()
         commandBuffer.present(currentDrawable)
