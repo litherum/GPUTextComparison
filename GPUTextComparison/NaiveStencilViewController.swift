@@ -35,7 +35,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
     var vertexBuffers: [MTLBuffer] = []
     var fillVertexBuffer: MTLBuffer! = nil
 
-    let inflightSemaphore = dispatch_semaphore_create(MaxBuffers)
+    let inflightSemaphore = DispatchSemaphore(value : MaxBuffers)
     var bufferIndex = 0
 
     var frameCounter = 0
@@ -97,7 +97,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         pipelineStateDescriptor.vertexDescriptor = vertexDescriptor
 
         do {
-            try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineStateDescriptor)
         } catch let error {
             fatalError("Failed to create pipeline state, error \(error)")
         }
@@ -113,15 +113,15 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         let countDepthStencilDescriptor = MTLDepthStencilDescriptor()
         countDepthStencilDescriptor.frontFaceStencil = countFrontFaceStencil
         countDepthStencilDescriptor.backFaceStencil = countBackFaceStencil
-        countDepthStencilState = device.newDepthStencilStateWithDescriptor(countDepthStencilDescriptor)
+        countDepthStencilState = device.makeDepthStencilState(descriptor: countDepthStencilDescriptor)
 
         let fillStencil = MTLStencilDescriptor()
-        fillStencil.stencilCompareFunction = .NotEqual
+        fillStencil.stencilCompareFunction = .notEqual
 
         let fillDepthStencilDescriptor = MTLDepthStencilDescriptor()
         fillDepthStencilDescriptor.frontFaceStencil = fillStencil
         fillDepthStencilDescriptor.backFaceStencil = fillStencil
-        fillDepthStencilState = device.newDepthStencilStateWithDescriptor(fillDepthStencilDescriptor)
+        fillDepthStencilState = device.makeDepthStencilState(descriptor: fillDepthStencilDescriptor)
 
         let fillVertexData : [Float] = [
             0, 0,
@@ -132,12 +132,12 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
             Float(view.bounds.width), 0,
             0, 0
         ]
-        fillVertexBuffer = device.newBufferWithBytes(fillVertexData, length: MemoryLayout.size(ofValue: fillVertexData[0]) * fillVertexData.count, options: .StorageModeManaged)
+        fillVertexBuffer = device.makeBuffer(bytes: fillVertexData, length: MemoryLayout.size(ofValue: fillVertexData[0]) * fillVertexData.count, options: .storageModeManaged)
     }
 
     private func acquireVertexBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
-            let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
+            let newBuffer = device.makeBuffer(length: VertexBufferSize, options: [])!
             usedBuffers.append(newBuffer)
             return newBuffer
         } else {
@@ -154,7 +154,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         return true
     }
 
-    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, vertexBuffer: inout MTLBuffer, inout vertexBufferUtilization: Int, inout usedVertexBuffers: [MTLBuffer], vertexCount: Int) {
+    private func issueDraw(renderEncoder: MTLRenderCommandEncoder, vertexBuffer: inout MTLBuffer, vertexBufferUtilization: inout Int, usedVertexBuffers: inout [MTLBuffer], vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
@@ -183,32 +183,32 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
 
     private class func approximatePath(path: CGPath) -> CGPath
     {
-        let result = CGPathCreateMutable()
+        let result = CGMutablePath()
         var currentPoint = CGPointZero
         var subpathBegin = CGPointZero
         let definition = 10
         iterateCGPath(path) {(element : CGPathElement) in
             switch element.type {
-            case .MoveToPoint:
+            case .moveToPoint:
                 CGPathMoveToPoint(result, nil, element.points[0].x, element.points[0].y)
                 currentPoint = element.points[0]
                 subpathBegin = currentPoint
-            case .AddLineToPoint:
+            case .addLineToPoint:
                 CGPathAddLineToPoint(result, nil, element.points[0].x, element.points[0].y)
                 currentPoint = element.points[0]
-            case .AddQuadCurveToPoint:
+            case .addQuadCurveToPoint:
                 for i in 1 ... definition {
                     let intermediate = NaiveStencilViewController.interpolateQuadraticBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1])
                     CGPathAddLineToPoint(result, nil, intermediate.x, intermediate.y)
                 }
                 currentPoint = element.points[1]
-            case .AddCurveToPoint:
+            case .addCurveToPoint:
                 for i in 1 ... definition {
                     let intermediate = NaiveStencilViewController.interpolateCubicBezier(CGFloat(i) / CGFloat(definition), p0: currentPoint, p1: element.points[0], p2: element.points[1], p3: element.points[2])
                     CGPathAddLineToPoint(result, nil, intermediate.x, intermediate.y)
                 }
                 currentPoint = element.points[2]
-            case .CloseSubpath:
+            case .closeSubpath:
                 CGPathAddLineToPoint(result, nil, subpathBegin.x, subpathBegin.y)
                 currentPoint = subpathBegin
             }
@@ -222,10 +222,10 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
         var subpathBegin = CGPointZero
         iterateCGPath(path) {(element : CGPathElement) in
             switch element.type {
-            case .MoveToPoint:
+            case .moveToPoint:
                 subpathBegin = element.points[0]
                 previousPoint = subpathBegin
-            case .AddLineToPoint:
+            case .addLineToPoint:
                 if let p = previousPoint {
                     result.append(0)
                     result.append(0)
@@ -237,11 +237,11 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
                     result.append(Float(element.points[0].y))
                 }
                 previousPoint = element.points[0]
-            case .AddQuadCurveToPoint:
+            case .addQuadCurveToPoint:
                 fatalError()
-            case .AddCurveToPoint:
+            case .addCurveToPoint:
                 fatalError()
-            case .CloseSubpath:
+            case .closeSubpath:
                 if let p = previousPoint {
                     result.append(0)
                     result.append(0)
@@ -270,7 +270,7 @@ class NaiveStencilViewController: TextViewController, MTKViewDelegate {
 
         var usedVertexBuffers: [MTLBuffer] = []
 
-        let commandBuffer = commandQueue.commandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()!
 
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return

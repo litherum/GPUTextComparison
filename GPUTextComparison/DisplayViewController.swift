@@ -112,16 +112,16 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         pipelineStateDescriptor.vertexDescriptor = vertexDescriptor
         
         do {
-            try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineStateDescriptor)
         } catch let error {
             fatalError("Failed to create pipeline state, error \(error)")
         }
 
         let textureWidth = 4096
         let textureHeight = 4096
-        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptorWithPixelFormat(.R8Unorm, width: textureWidth, height: textureHeight, mipmapped: false)
-        texture = device.newTextureWithDescriptor(textureDescriptor)
-        let newData = Array<UInt8>(count: textureWidth * textureHeight, repeatedValue: UInt8(255))
+        let textureDescriptor = MTLTextureDescriptor.texture2DDescriptor(pixelFormat: .R8Unorm, width: textureWidth, height: textureHeight, mipmapped: false)
+        texture = device.makeTexture(descriptor: textureDescriptor)
+        let newData = Array<UInt8>(repeatedValue: UInt8(255), count: textureWidth * textureHeight)
         texture.replaceRegion(MTLRegionMake2D(0, 0, textureWidth, textureHeight), mipmapLevel: 0, withBytes: newData, bytesPerRow: 4096)
 
         glyphAtlas = GlyphAtlas(texture: texture)
@@ -129,7 +129,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
     private func acquireVertexBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
-            let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
+            let newBuffer = device.makeBuffer(length: VertexBufferSize, options: [])!
             usedBuffers.append(newBuffer)
             return newBuffer
         } else {
@@ -141,7 +141,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
 
     private func acquireTextureCoordinateBuffer(usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if textureCoordinateBuffers.isEmpty {
-            let newBuffer = device.newBufferWithLength(TextureCoordinateBufferSize, options: [])
+            let newBuffer = device.makeBuffer(length: TextureCoordinateBufferSize, options: [])!
             usedBuffers.append(newBuffer)
             return newBuffer
         } else {
@@ -234,7 +234,7 @@ class DisplayViewController: TextViewController, MTKViewDelegate {
         var usedVertexBuffers: [MTLBuffer] = []
         var usedTextureCoordinateBuffers: [MTLBuffer] = []
 
-        let commandBuffer = commandQueue.commandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()
 
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return

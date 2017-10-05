@@ -97,7 +97,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         pipelineStateDescriptor.vertexDescriptor = vertexDescriptor
 
         do {
-            try pipelineState = device.newRenderPipelineStateWithDescriptor(pipelineStateDescriptor)
+            try pipelineState = device.makeRenderPipelineState(descriptor: pipelineStateDescriptor)
         } catch let error {
             fatalError("Failed to create pipeline state, error \(error)")
         }
@@ -105,7 +105,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
 
     private func acquireVertexBuffer( usedBuffers: inout [MTLBuffer]) -> MTLBuffer {
         if vertexBuffers.isEmpty {
-            let newBuffer = device.newBufferWithLength(VertexBufferSize, options: [])
+            let newBuffer = device.makeBuffer(length: VertexBufferSize, options: [])!
             usedBuffers.append(newBuffer)
             return newBuffer
         } else {
@@ -176,7 +176,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
                            vertexCount: Int) {
         renderEncoder.setVertexBuffer(vertexBuffer, offset: 0, index: 0)
         renderEncoder.setVertexBuffer(coefficientBuffer, offset:0, index: 1)
-        renderEncoder.drawPrimitives(type: type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
+        renderEncoder.drawPrimitives(type: .triangle, vertexStart: 0, vertexCount: vertexCount, instanceCount: 1)
 
         vertexBuffer = acquireVertexBuffer(&usedVertexBuffers)
         vertexBufferUtilization = 0
@@ -198,7 +198,7 @@ class LoopBlinnViewController: TextViewController, MTKViewDelegate {
         var usedVertexBuffers: [MTLBuffer] = []
         var usedCoefficientBuffers: [MTLBuffer] = []
 
-        let commandBuffer = commandQueue.commandBuffer()
+        let commandBuffer = commandQueue.makeCommandBuffer()
 
         guard let renderPassDescriptor = view.currentRenderPassDescriptor, let currentDrawable = view.currentDrawable else {
             return

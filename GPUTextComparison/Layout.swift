@@ -14,10 +14,16 @@ struct Glyph {
     let position : CGPoint
 }
 
+extension CGRect {
+    init(_ a : CGFloat, _ b : CGFloat, _ c : CGFloat, _ d : CGFloat) {
+        self.init(origin : CGPoint(x: a, y: b), size : CGSize(c, d))
+    }
+}
+
 typealias Frame = [Glyph]
 
 func layout() -> [Frame] {
-    let path = Bundle.main.pathForResource("shakespeare", ofType: "txt")!
+    let path = Bundle.main.path(forResource: "shakespeare", ofType: "txt")!
     var encoding = UInt(0)
     var string = ""
     do {
@@ -34,7 +40,7 @@ func layout() -> [Frame] {
     guard let font = CTFontCreateUIFontForLanguage(.system, 50, nil) else {
         fatalError()
     }
-    let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string as CFString, [kCTFontAttributeName as String : font])
+    let attributedString = CFAttributedStringCreate(kCFAllocatorDefault, string as CFString, [kCTFontAttributeName as String : font] as CFDictionary)!
     let framesetter = CTFramesetterCreateWithAttributedString(attributedString)
     var frameStart = CFIndex(0)
     var result : [Frame] = []
@@ -45,7 +51,7 @@ func layout() -> [Frame] {
             break
         }
         let lines = CTFrameGetLines(frame) as NSArray
-        var lineOrigins = Array<CGPoint>(count: lines.count, repeatedValue: CGPointZero)
+        var lineOrigins = [CGPoint](repeating: .zero, count: lines.count)
         CTFrameGetLineOrigins(frame, CFRangeMake(0, lines.count), &lineOrigins)
 
         var resultFrame = Frame()
@@ -58,9 +64,9 @@ func layout() -> [Frame] {
             for run in runs {
                 let run = run as! CTRun
                 let glyphCount = CTRunGetGlyphCount(run)
-                var glyphs = Array<CGGlyph>(count: glyphCount, repeatedValue: CGGlyph(0))
+                var glyphs = Array<CGGlyph>(repeating: CGGlyph(0), count: glyphCount)
                 CTRunGetGlyphs(run, CFRangeMake(0, glyphCount), &glyphs)
-                var positions = Array<CGPoint>(count: glyphCount, repeatedValue: CGPointZero)
+                var positions = Array<CGPoint>(repeating: .zero, count: glyphCount)
                 CTRunGetPositions(run, CFRangeMake(0, glyphCount), &positions)
                 let attributes = CTRunGetAttributes(run) as NSDictionary
                 let usedFont = attributes[kCTFontAttributeName as String] as! CTFont
